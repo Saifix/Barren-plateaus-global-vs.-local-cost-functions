@@ -1,0 +1,271 @@
+\documentclass[conference]{IEEEtran}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{url}
+
+\begin{document}
+
+\title{Barren Plateaus: Global vs.\ Local Cost Functions\\
+\large Initial Project Synopsis --- AI 631 Quantum Machine Learning, Fall 2026 (Project \#8, QNN track)}
+
+\author{\IEEEauthorblockN{Saif ur Rehman}
+% Add group members here once confirmed (groups of 2--3).
+\IEEEauthorblockA{GitHub: \url{https://github.com/Saifix/Barren-plateaus-global-vs.-local-cost-functions}}}
+
+\maketitle
+
+\section{Research Question}
+Parameterized quantum circuits (PQCs) trained by gradient descent can suffer
+from \emph{barren plateaus}: the variance of the cost gradient over random
+parameters vanishes exponentially with the number of qubits $n$, so gradients
+become too small to estimate with a polynomial number of shots~\cite{mcclean2018,larocca2025}.
+Cerezo \emph{et al.}~\cite{cerezo2021} showed that this depends on the cost
+function: for alternating layered ansatzes, a \emph{global} cost has
+exponentially vanishing gradients at any depth, while a \emph{local} cost has
+at worst polynomially vanishing gradients when the depth is
+$L=\mathcal{O}(\log n)$. The link between cost locality and barren plateaus
+was also studied in~\cite{uvarov2021}. We ask:
+
+\textbf{RQ.} How does the gradient variance scale with qubit count $n$ and depth
+$L$ for global and local costs on a hardware-efficient ansatz, does a smarter
+initialization (identity-block~\cite{grant2019} or reduced-domain) help, and how
+do these effects show up when training a small classifier, in simulation, under
+a noise model, and on IBM hardware?
+
+\section{Background and Related Work}
+For deep circuits, the gradient variance has been characterized exactly
+through the circuit's dynamical Lie algebra~\cite{ragone2024,fontana2024}.
+Zhang \emph{et al.}~\cite{zhang2024} gave a general lower bound on the gradient
+variance for circuits built from local 2-designs. Letcher
+\emph{et al.}~\cite{letcher2024} derived tighter gradient bounds without
+$t$-design assumptions that can be estimated efficiently on classical hardware,
+and argued that observables with a non-vanishing local term can avoid barren
+plateaus. The same global/local split appears in quantum generative models:
+the MMD loss acts as an observable that is low-bodied and trainable, or global
+and untrainable, depending on the kernel~\cite{rudolph2024}.
+Cerezo \emph{et al.}~\cite{cerezo2025} ask whether provable absence of barren
+plateaus implies classical simulability.
+
+\emph{Initialization.} Wang \emph{et al.}~\cite{wangqi2024} prove that shrinking
+each parameter's initial domain in proportion to $1/\sqrt{L}$ makes the
+gradient decay at most polynomially in $n$ and $L$. Classical initializers
+(Xavier, He, LeCun, orthogonal) reduce gradient-variance decay compared with
+uniform random initialization~\cite{kashif2024date}, and the range of the
+initial distribution alone can mitigate barren plateaus~\cite{kashif2024icrc}.
+
+\emph{Noise.} Unital noise causes noise-induced barren
+plateaus~\cite{wang2021}, and this analysis has been extended to a class of
+non-unital maps that includes amplitude damping~\cite{singkanipa2025}.
+Mele \emph{et al.}~\cite{mele2026} show that noise truncates most circuits to
+effectively logarithmic depth, and prove that under non-unital noise, costs
+built from local observables do not have barren plateaus. Engineered
+dissipation has also been proposed as a way to restore
+trainability~\cite{sannia2024}.
+
+\section{Hypotheses and Falsifiers}
+\textbf{H1 (cost locality).} At $L=\lceil\log_2 n\rceil$, $\mathrm{Var}[\partial_k C_G]$
+decays exponentially in $n$ while $\mathrm{Var}[\partial_k C_L]$ decays much more slowly.
+\emph{Falsified if}, over $n=4,\dots,14$, the fitted exponential decay rate
+$b$ (from $\log\mathrm{Var}=a-bn$) of the local cost is not smaller than that of
+the global cost (overlapping 95\% bootstrap CIs), or if the two variances at
+$n=14$ differ by less than a factor of 10.
+
+\textbf{H2 (depth).} For the local cost, increasing $L$ from $\lceil\log_2 n\rceil$
+to $L\propto n$ makes its variance decay faster with $n$.
+\emph{Falsified if} the fitted decay rate does not increase with $L$.
+
+\textbf{H3 (initialization).} Identity-block or reduced-domain initialization raises
+the initial gradient variance of the global cost and speeds up training.
+\emph{Falsified if}, at $n\ge 10$, neither scheme raises the initial gradient
+variance by at least $10\times$ over uniform initialization, or neither reduces
+the median number of iterations needed to reach a fixed target loss (10 seeds).
+
+\textbf{H4 (learning).} In the classification task, a model trained through a
+global readout learns more slowly than the same circuit trained through a
+local readout, and the gap widens with $n$.
+\emph{Falsified if} the test-accuracy curves (mean over seeds) are
+indistinguishable within one standard deviation at the largest $n$ tested.
+Negative results will be reported as such.
+
+\section{Models and Costs}
+\textbf{Ansatz.} Hardware-efficient layered circuit $V(\boldsymbol\theta)$ on $n$
+qubits: each layer applies $R_Y(\theta)R_Z(\theta)$ to every qubit, then CZ
+gates on pairs $(1,2),(3,4),\dots$ followed by $(2,3),(4,5),\dots$ (brickwork).
+This gives $2nL$ parameters and $(n-1)L$ CZ gates. This ansatz is not
+guaranteed to satisfy the assumptions in~\cite{cerezo2021}, so this is an
+empirical test.
+
+\textbf{Costs.} With $\rho=V(\boldsymbol\theta)\,|\psi_0\rangle\langle\psi_0|\,V(\boldsymbol\theta)^\dagger$,
+\begin{align}
+C_G &= 1-\langle 0^{\otimes n}|\rho|0^{\otimes n}\rangle,\\
+C_L &= 1-\tfrac{1}{n}\textstyle\sum_{j=1}^{n}\langle 0|\rho_j|0\rangle,
+\end{align}
+where $\rho_j$ is the reduced state of qubit $j$, as defined in~\cite{cerezo2021}.
+Both costs come from the same $Z$-basis measurement: $C_G$ uses the
+all-zeros frequency and $C_L$ uses the single-qubit marginals.
+
+\textbf{Sanity check.} For the product ansatz $\bigotimes_j R_X(\theta_j)$ on
+$|0\rangle^{\otimes n}$ with $\theta_j\sim U[0,2\pi]$, a direct calculation gives
+$\mathrm{Var}[\partial_1 C_G]=\tfrac18(\tfrac38)^{n-1}$ and
+$\mathrm{Var}[\partial_1 C_L]=\tfrac{1}{8n^2}$. We will use this closed form as
+a unit test for the variance-estimation code.
+
+\textbf{Initializations.} (i) Uniform $\theta\sim U[0,2\pi]$;
+(ii) reduced-domain $\theta\sim U[-a,a]$ with $a\propto 1/\sqrt{L}$, following~\cite{wangqi2024};
+(iii) identity blocks~\cite{grant2019}, where each block is a random sub-circuit
+followed by its adjoint, so the block starts as the identity.
+
+\textbf{Training task.} A fixed random shallow circuit $W$ prepares
+$|\psi_0\rangle=W|0\rangle$, and $V(\boldsymbol\theta)$ is trained to map it back
+to $|0\rangle^{\otimes n}$. This keeps identity initialization from being
+trivially optimal.
+
+\textbf{Classifier.} Angle encoding of $n$ PCA features, followed by the same
+ansatz. The class score is either global ($P(0^{\otimes n})$) or local
+($\tfrac12(1+\tfrac1n\sum_j\langle Z_j\rangle)$), trained with binary
+cross-entropy. Gradients are exact on the statevector simulator and use the
+parameter-shift rule~\cite{schuld2019} with finite shots and on hardware.
+
+\section{Data and Baselines}
+Gradient-variance studies use random circuits only, so no external data is
+needed. The classification task uses the Breast Cancer Wisconsin (Diagnostic)
+dataset shipped with scikit-learn, reduced by PCA to $n$ features
+($n\in\{4,6,8,10\}$). We use the course NB11 starter harness for stratified
+folds and leakage-free preprocessing (scaler and PCA fit on the training fold
+only), with fixed seeds. The classical baselines are majority class, logistic
+regression, and an MLP with a parameter count matched to the quantum model. We
+report MLP training curves on the same folds next to the quantum curves. For
+gradient scaling, the reference is the analytic product-ansatz result above.
+
+\section{Experimental Protocol and Resources}
+\textbf{Noise-free sweeps:} $n\in\{2,4,\dots,14\}$, $L\in\{1,\lceil\log_2 n\rceil, n\}$,
+200 parameter draws per $(n,L,\text{cost},\text{init})$. We report the variance of
+$\partial_k C$ for a fixed $k$ and averaged over $k$, with bootstrap CIs.
+\textbf{Noisy simulation:} Qiskit Aer with depolarizing (unital) and
+amplitude-damping (non-unital) channels, plus a noise model taken from an IBM
+fake backend. This separates cost-induced from noise-induced
+plateaus~\cite{wang2021,singkanipa2025} and tests whether the local cost
+holds up better under non-unital noise, as~\cite{mele2026} suggests.
+\textbf{Hardware:} parameter-shift gradients on an IBM backend at
+$n\in\{2,4,6\}$, $L=\lceil\log_2 n\rceil$, 30--50 random draws, 2 circuits per
+gradient, 4096 shots, so at most 300 circuits in total, with both costs from
+the same circuits. We report the shot-noise floor next to measured variances.
+Software: PennyLane and Qiskit~\cite{qiskit2024}.
+
+\section{Week-by-Week Plan}
+{\small\noindent
+\begin{tabular}{@{}p{0.17\columnwidth}p{0.75\columnwidth}@{}}
+\toprule
+Week (due) & Work \\
+\midrule
+0 (Nov 14) & Repo and environment; analytic unit test; ansatz and both costs; variance-estimation script. \\
+1 (Nov 15) & Noise-free variance sweep for $n\le 14$, uniform initialization; classifier pipeline with NB11 folds; classical baselines; first quantum classifier. Report: introduction and methods. \\
+2 (Nov 22) & Full $(n,L)$ sweeps; three initializations; training task; global vs.\ local classifier curves; noise-model runs and ablations. Report: results draft. \\
+3 (Nov 29) & IBM hardware parameter-shift gradients at $n=2,4,6$; compare with the noise model; presentation if scheduled. \\
+4 (Dec 6) & Final IEEE report (PDF and source), final talk, tagged GitHub release with saved results and scripts to reproduce every figure. \\
+\bottomrule
+\end{tabular}\par}
+
+\begin{thebibliography}{20}
+\bibitem{mcclean2018}
+J.~R. McClean, S.~Boixo, V.~N. Smelyanskiy, R.~Babbush, and H.~Neven,
+``Barren plateaus in quantum neural network training landscapes,''
+\emph{Nat. Commun.}, vol.~9, art.~4812, 2018, doi: 10.1038/s41467-018-07090-4.
+
+\bibitem{larocca2025}
+M.~Larocca \emph{et al.},
+``Barren plateaus in variational quantum computing,''
+\emph{Nat. Rev. Phys.}, vol.~7, pp.~174--189, 2025, doi: 10.1038/s42254-025-00813-9.
+
+\bibitem{cerezo2021}
+M.~Cerezo, A.~Sone, T.~Volkoff, L.~Cincio, and P.~J. Coles,
+``Cost function dependent barren plateaus in shallow parametrized quantum circuits,''
+\emph{Nat. Commun.}, vol.~12, art.~1791, 2021, doi: 10.1038/s41467-021-21728-w.
+
+\bibitem{uvarov2021}
+A.~V. Uvarov and J.~D. Biamonte,
+``On barren plateaus and cost function locality in variational quantum algorithms,''
+\emph{J. Phys. A: Math. Theor.}, vol.~54, art.~245301, 2021, doi: 10.1088/1751-8121/abfac7.
+
+\bibitem{grant2019}
+E.~Grant, L.~Wossnig, M.~Ostaszewski, and M.~Benedetti,
+``An initialization strategy for addressing barren plateaus in parametrized quantum circuits,''
+\emph{Quantum}, vol.~3, p.~214, 2019, doi: 10.22331/q-2019-12-09-214.
+
+\bibitem{ragone2024}
+M.~Ragone \emph{et al.},
+``A Lie algebraic theory of barren plateaus for deep parameterized quantum circuits,''
+\emph{Nat. Commun.}, vol.~15, art.~7172, 2024, doi: 10.1038/s41467-024-49909-3.
+
+\bibitem{fontana2024}
+E.~Fontana \emph{et al.},
+``Characterizing barren plateaus in quantum ans\"atze with the adjoint representation,''
+\emph{Nat. Commun.}, vol.~15, art.~7171, 2024, doi: 10.1038/s41467-024-49910-w.
+
+\bibitem{zhang2024}
+H.-K. Zhang, S.~Liu, and S.-X. Zhang,
+``Absence of barren plateaus in finite local-depth circuits with long-range entanglement,''
+\emph{Phys. Rev. Lett.}, vol.~132, art.~150603, 2024, doi: 10.1103/PhysRevLett.132.150603.
+
+\bibitem{letcher2024}
+A.~Letcher, S.~Woerner, and C.~Zoufal,
+``Tight and efficient gradient bounds for parameterized quantum circuits,''
+\emph{Quantum}, vol.~8, p.~1484, 2024, doi: 10.22331/q-2024-09-25-1484.
+
+\bibitem{rudolph2024}
+M.~S. Rudolph \emph{et al.},
+``Trainability barriers and opportunities in quantum generative modeling,''
+\emph{npj Quantum Inf.}, vol.~10, art.~116, 2024, doi: 10.1038/s41534-024-00902-0.
+
+\bibitem{cerezo2025}
+M.~Cerezo \emph{et al.},
+``Does provable absence of barren plateaus imply classical simulability?''
+\emph{Nat. Commun.}, vol.~16, art.~7907, 2025, doi: 10.1038/s41467-025-63099-6.
+
+\bibitem{wangqi2024}
+Y.~Wang, B.~Qi, C.~Ferrie, and D.~Dong,
+``Trainability enhancement of parameterized quantum circuits via reduced-domain parameter initialization,''
+\emph{Phys. Rev. Appl.}, vol.~22, art.~054005, 2024, doi: 10.1103/PhysRevApplied.22.054005.
+
+\bibitem{kashif2024date}
+M.~Kashif, M.~Rashid, S.~Al-Kuwari, and M.~Shafique,
+``Alleviating barren plateaus in parameterized quantum machine learning circuits: Investigating advanced parameter initialization strategies,''
+in \emph{Proc. Design, Automation \& Test in Europe Conf. (DATE)}, 2024, pp.~1--6, doi: 10.23919/DATE58400.2024.10546644.
+
+\bibitem{kashif2024icrc}
+M.~Kashif and M.~Shafique,
+``The dilemma of random parameter initialization and barren plateaus in variational quantum algorithms,''
+in \emph{Proc. IEEE Int. Conf. Rebooting Computing (ICRC)}, 2024, pp.~1--8, doi: 10.1109/ICRC64395.2024.10937003.
+
+\bibitem{wang2021}
+S.~Wang, E.~Fontana, M.~Cerezo, K.~Sharma, A.~Sone, L.~Cincio, and P.~J. Coles,
+``Noise-induced barren plateaus in variational quantum algorithms,''
+\emph{Nat. Commun.}, vol.~12, art.~6961, 2021, doi: 10.1038/s41467-021-27045-6.
+
+\bibitem{singkanipa2025}
+P.~Singkanipa and D.~A. Lidar,
+``Beyond unital noise in variational quantum algorithms: Noise-induced barren plateaus and limit sets,''
+\emph{Quantum}, vol.~9, p.~1617, 2025, doi: 10.22331/q-2025-01-30-1617.
+
+\bibitem{mele2026}
+A.~A. Mele \emph{et al.},
+``Noise-induced shallow circuits and the absence of barren plateaus,''
+\emph{Nat. Phys.}, vol.~22, pp.~751--756, 2026, doi: 10.1038/s41567-026-03245-z.
+
+\bibitem{sannia2024}
+A.~Sannia, F.~Tacchino, I.~Tavernelli, G.~L. Giorgi, and R.~Zambrini,
+``Engineered dissipation to mitigate barren plateaus,''
+\emph{npj Quantum Inf.}, vol.~10, art.~81, 2024, doi: 10.1038/s41534-024-00875-0.
+
+\bibitem{schuld2019}
+M.~Schuld, V.~Bergholm, C.~Gogolin, J.~Izaac, and N.~Killoran,
+``Evaluating analytic gradients on quantum hardware,''
+\emph{Phys. Rev. A}, vol.~99, art.~032331, 2019, doi: 10.1103/PhysRevA.99.032331.
+
+\bibitem{qiskit2024}
+A.~Javadi-Abhari \emph{et al.},
+``Quantum computing with Qiskit,''
+arXiv:2405.08810, 2024.
+\end{thebibliography}
+
+\end{document}
