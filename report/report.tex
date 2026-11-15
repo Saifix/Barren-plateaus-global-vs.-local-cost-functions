@@ -4,7 +4,7 @@
 \usepackage{graphicx}
 \usepackage{url}
 \usepackage{tikz}
-\usetikzlibrary{quantikz2,positioning,arrows.meta,fit,backgrounds}
+\usetikzlibrary{quantikz,positioning,arrows.meta,fit,backgrounds,calc}
 \providecommand{\ket}[1]{\left|#1\right\rangle}
 \graphicspath{{../figures/}}
 
@@ -120,10 +120,10 @@ the point of the study.
 \lstick{$\ket{0}$} & \gate{R_Y(x_1)}
   & \gate{R_Y}\gategroup[wires=4,steps=5,style={dashed,rounded corners,inner sep=3pt},
       label style={label position=below,anchor=north,yshift=-0.15cm}]{one layer, repeated $L$ times}
-  & \gate{R_Z} & \ctrl{1} & & & \meter{} \\
-\lstick{$\ket{0}$} & \gate{R_Y(x_2)} & \gate{R_Y} & \gate{R_Z} & \control{} & \ctrl{1} & & \meter{} \\
-\lstick{$\ket{0}$} & \gate{R_Y(x_3)} & \gate{R_Y} & \gate{R_Z} & \ctrl{1} & \control{} & & \meter{} \\
-\lstick{$\ket{0}$} & \gate{R_Y(x_4)} & \gate{R_Y} & \gate{R_Z} & \control{} & & & \meter{}
+  & \gate{R_Z} & \ctrl{1} & \qw & \qw & \meter{} \\
+\lstick{$\ket{0}$} & \gate{R_Y(x_2)} & \gate{R_Y} & \gate{R_Z} & \control{} \qw & \ctrl{1} & \qw & \meter{} \\
+\lstick{$\ket{0}$} & \gate{R_Y(x_3)} & \gate{R_Y} & \gate{R_Z} & \ctrl{1} & \control{} \qw & \qw & \meter{} \\
+\lstick{$\ket{0}$} & \gate{R_Y(x_4)} & \gate{R_Y} & \gate{R_Z} & \control{} \qw & \qw & \qw & \meter{}
 \end{quantikz}}
 \caption{Circuit for $n=4$. Angle encoding $R_Y(x_j)$ (classifier only), then
 $L$ HEA layers, then a single $Z$-basis measurement from which both
@@ -138,7 +138,7 @@ With $\rho=V(\boldsymbol\theta)\ket{\psi_0}\!\langle\psi_0|V(\boldsymbol\theta)^
 \CL &= 1-\tfrac{1}{n}\textstyle\sum_{j=1}^{n}\langle 0|\rho_j|0\rangle = 1-\langle O_{\mathrm L}\rangle,
 \end{align}
 with $O_{\mathrm G}=|0^{\otimes n}\rangle\langle 0^{\otimes n}|$,
-$O_{\mathrm L}=\frac1n\sum_j |0\rangle\langle 0|_j\otimes\mathbb 1_{\bar j}$ and
+$O_{\mathrm L}=\frac1n\sum_j |0\rangle\langle 0|_j\otimes I_{\bar j}$ and
 $\rho_j$ the reduced state of qubit $j$, as in~\cite{cerezo2021}. Both
 observables are diagonal in the computational basis, so both costs come from the same
 measurement record. Both vanish exactly at the solution and are bounded by 1,
@@ -338,18 +338,23 @@ $n$ & $L$ & quantum params & CZ & MLP $h$ & MLP params\\
       label={[font=\scriptsize]above:fitted on the training fold only}] (prep) {};
 \end{scope}
 \node[box, right=8mm of mm, yshift=8mm] (enc) {$R_Y(x_j)$ encoding\\$\to V(\boldsymbol\theta)$, $L$ layers};
-\node[box, right=of enc, draw=cglobal, text=cglobal] (pg) {global\\$P(0^{\otimes n})$};
-\node[box, below=1mm of pg, draw=clocal, text=clocal] (pl) {local\\$\frac1n\sum_j P(q_j{=}0)$};
-\node[box, right=8mm of mm, yshift=-10mm] (cls) {majority, logistic,\\RBF-SVM, MLP};
-\node[box, right=of pl, yshift=-2mm] (met) {acc, bal.\ acc, AUC\\exact \& 2048 shots};
+\node[box, right=9mm of enc, yshift=5.5mm, text width=2.4cm, draw=cglobal, text=cglobal] (pg)
+  {global readout\\$P(0^{\otimes n})$};
+\node[box, right=9mm of enc, yshift=-5.5mm, text width=2.4cm, draw=clocal, text=clocal] (pl)
+  {local readout\\$\frac1n\sum_j P(q_j{=}0)$};
+\node[box, right=8mm of mm, yshift=-12mm] (cls) {majority, logistic,\\RBF-SVM, MLP};
+\node[box, anchor=west] (met) at ($(pg.east)!0.5!(pl.east)+(11mm,0)$)
+  {acc, bal.\ acc, AUC\\exact \& 2048 shots};
+\coordinate (join) at ($(met.west)+(-5mm,0)$);
 \draw[arr] (data) -- (folds);
 \draw[arr] (folds) -- (prep);
 \draw[arr] (prep.east) -- ++(3mm,0) |- (enc.west);
 \draw[arr] (prep.east) -- ++(3mm,0) |- (cls.west);
-\draw[arr] (enc) -- (pg);
-\draw[arr] (enc.east) -- ++(2mm,0) |- (pl.west);
-\draw[arr] (pg.east) -- ++(2mm,0) |- (met.west);
-\draw[arr] (pl.east) -- ++(1mm,0) |- (met.west);
+\draw[arr] (enc.east) -- ++(4mm,0) |- (pg.west);
+\draw[arr] (enc.east) -- ++(4mm,0) |- (pl.west);
+\draw[thick] (pg.east) -| (join);
+\draw[thick] (pl.east) -| (join);
+\draw[arr] (join) -- (met.west);
 \draw[arr] (cls.east) -| (met.south);
 \end{tikzpicture}}
 \caption{Classification pipeline. Every model, quantum or classical, sees the
