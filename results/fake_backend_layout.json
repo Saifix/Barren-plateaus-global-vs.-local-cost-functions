@@ -1,0 +1,49 @@
+{
+ "backend": "FakeFez",
+ "layouts": {
+  "2": {
+   "physical_qubits": [
+    4,
+    5
+   ],
+   "sum_cz_error": 0.00276468082328718,
+   "sum_readout_error": 0.009033203125
+  },
+  "4": {
+   "physical_qubits": [
+    8,
+    9,
+    10,
+    11
+   ],
+   "sum_cz_error": 0.010448486549734182,
+   "sum_readout_error": 0.024658203125
+  },
+  "6": {
+   "physical_qubits": [
+    6,
+    7,
+    8,
+    9,
+    10,
+    11
+   ],
+   "sum_cz_error": 0.0198844488924656,
+   "sum_readout_error": 0.052490234375
+  },
+  "8": {
+   "physical_qubits": [
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11
+   ],
+   "sum_cz_error": 0.0375697399037086,
+   "sum_readout_error": 0.0615234375
+  }
+ }
+}

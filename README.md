@@ -59,17 +59,60 @@ In brief:
 
 ![Training under shot noise vs. exact gradients](figures/shot_training.png)
 
+## Week 2 status (Nov 22)
+
+| Deliverable | Where |
+|---|---|
+| Density-matrix simulator with exact adjoint gradients (depolarizing, amplitude damping) | `src/bp/density.py`, `tests/test_density.py` |
+| Identity-block circuit `ib_hea` and the three initializations | `src/bp/ansatz.py`, `tests/test_week2.py` |
+| H3 part 1: initial gradient variance by initialization, n = 2…14, width ablation | `experiments/07_init_variance.py` |
+| H3 part 2: teacher-state training, 10 seeds, shot-noise + exact gradients | `experiments/08_state_training.py`, `src/bp/state_task.py` |
+| H4 continued: Run C (n = 10) and Run D (32/128 shots, n = 8) | `experiments/09_shot_training_ext.py` |
+| Noise study: n, depth and strength sweeps | `experiments/10_noise_variance.py` |
+| IBM `FakeFez` device noise model (Aer density matrix + readout error) | `experiments/11_fake_backend.py` |
+| Report: results section draft | `report/report.tex` |
+
+Headline numbers are in [`results/week2_summary.md`](results/week2_summary.md);
+a plain-language overview is in [`PROJECT_OVERVIEW.md`](PROJECT_OVERVIEW.md).
+In brief:
+
+* **H1/H2 refit over the pre-registered n = 4…14** (Week 1 included n = 2):
+  b_G = 1.17 vs. b_L = 0.29 at L = ⌈log₂ n⌉; at L = n, 1.33 vs. 0.37. Same conclusions.
+* **H3, variance criterion not met.** At n ≥ 10, identity blocks raise the initial
+  global-cost variance by 1.5–2.5× and reduced-domain starts by 1.1–1.3×, far
+  from the pre-registered 10×. The target overlap itself is exponentially small.
+* **H3, training criterion not met.** On the teacher-state task (10 seeds) neither
+  start trains faster at n = 10 (1024-shot gradients) or n = 12 (exact); all
+  Mann–Whitney p ≥ 0.36. At these sizes the global cost trains as well as the local
+  one, because the shot noise of P(0ⁿ) shrinks with P itself.
+* **H4, pre-registered falsifier not triggered, but the gap is not a plateau effect.**
+  At n = 10 (Run C) the local readout's test AUC exceeds the global one's by
+  +0.029 [0.016, 0.042] (paired, > 1 s.d.). The gap is the same with exact
+  gradients (+0.026), both readouts learn equally fast, and cutting the budget to
+  32 shots (Run D, n = 8) barely changes either readout. It is a readout-capacity
+  difference, not slower training.
+* **Noise.** At shallow depth, 1% two-qubit noise removes at most 20% of the
+  variance; the global/local gap is orders of magnitude larger. In deep circuits
+  (n = 6, L = 12), depolarizing noise removes 67% (global) and 53% (local).
+* **FakeFez.** Variances stay within 15% of noiseless up to n = 8. The 4096-shot
+  floor is ≥ 180× below the signal at n ≤ 6, so the Week 3 hardware run is feasible.
+
+![Initial gradient variance by initialization](figures/init_variance.png)
+
 ## Repository layout
 
 ```
 src/bp/            library: simulator, ansatz & costs, data, baselines, classifier, Qiskit circuits, plot style
 experiments/       00 folds · 01 variance sweep · 02 baselines · 03 quantum classifier (Run A)
                    04 landscape · 05 leakage check · 06 shot-noise training (Run B)
-viz/               figure scripts (matplotlib) and the 3D explorer generator
-tests/             simulator, pipeline and shot-gradient tests (Qiskit cross-check,
-                   finite differences, parameter shift, closed form)
+                   07 init variance · 08 teacher-state training · 09 Runs C/D
+                   10 noise variance · 11 FakeFez noise model
+viz/               figure scripts (matplotlib), the 3D explorer generator, week2_summary.py
+tests/             simulator, density-matrix, pipeline and shot-gradient tests (Qiskit/Aer
+                   cross-checks, finite differences, parameter shift, closed form)
 data/folds.json    the one fold object used by every table
-results/           CSV outputs + week1_summary.md
+results/           CSV outputs + week1_summary.md, week2_summary.md
+                   (results/cache/ holds per-run checkpoints; not committed)
 figures/           PDF/PNG figures + landscape_3d.html
 report/            IEEE report (report.tex, refs.bib)
 synopsis/          initial project synopsis
@@ -83,12 +126,16 @@ py -3.14 -m venv .venv
 .venv\Scripts\python -m pip install -r requirements.txt
 .venv\Scripts\python -m pip install -e .
 .venv\Scripts\python -m pytest
-.venv\Scripts\python run_all.py              # everything, ~3 h on 8–10 cores
-.venv\Scripts\python run_all.py --skip-slow  # skip 03 and 06, rebuild figures from results/
+.venv\Scripts\python run_all.py              # everything; Week 2 adds ~1 day on 16 threads
+.venv\Scripts\python run_all.py --skip-slow  # skip 01, 03, 06–09, rebuild figures from results/
 ```
 
-Approximate times: the variance sweep (01) takes ~2 h, dominated by n = 14 with
-2000 draws. Run A (03) takes ~20 min and Run B (06) ~25 min, both in parallel.
+Approximate times (16 logical cores): the variance sweep (01) takes ~2 h,
+dominated by n = 14 with 2000 draws. Run A (03) takes ~20 min and Run B (06)
+~25 min. Week 2: 07 ~1 h, 10 and 11 ~30 min each; 08 (teacher-state training)
+~5 h and 09 (Runs C/D) ~14 h, dominated by 1024-shot parameter-shift training at
+n = 10. Both write a checkpoint per finished run to `results/cache/` and resume
+from it when restarted; `BP_WORKERS` sets the number of worker processes.
 Everything else takes a minute or less. One seed constant (`bp.SEED = 0`);
 every experimental constant is in `src/bp/config.py`. GitHub Actions runs the
 test suite on Python 3.12 and 3.14.

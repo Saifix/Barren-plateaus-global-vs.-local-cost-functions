@@ -29,7 +29,8 @@ Code: \url{https://github.com/Saifix/Barren-plateaus-global-vs.-local-cost-funct
 
 \begin{abstract}
 % To be written once all results are in (Week 4).
-\emph{Draft, Week~1: introduction and methods only.}
+\emph{Draft, Week~2: introduction, methods and simulation results; hardware
+results (Week~3) to follow.}
 \end{abstract}
 
 % =====================================================================
@@ -200,13 +201,54 @@ every depth and for both costs (the costs share the same draws).
 
 \subsection{Initializations (H3)}
 (i) Uniform, $\theta\sim U[0,2\pi]$; (ii) reduced-domain,
-$\theta\sim U[-a,a]$ with $a=\pi/\sqrt{L}$~\cite{wangqi2024}; (iii) identity
-blocks~\cite{grant2019}: each block is a random sub-circuit followed by its
-adjoint, so it starts as the identity. To keep the identity initialization from
-being trivially optimal, the training task prepares
-$\ket{\psi_0}=W_0\ket{0}^{\otimes n}$ with a fixed random shallow circuit
-$W_0$ and trains $V(\boldsymbol\theta)$ to map it back to
-$\ket{0}^{\otimes n}$. Week-1 results use (i) only.
+$\theta\sim U[-a,a]$ with $a=\pi/\sqrt{L}$~\cite{wangqi2024}, $L$ the number
+of rotation layers; (iii) identity blocks~\cite{grant2019}: a random
+sub-circuit followed by its adjoint, so the circuit starts as the identity.
+
+\paragraph*{Identity-block circuit} Identity blocks cannot be built from
+HEA layers directly. The adjoint of a layer ``rotations, then CZs'' is ``CZs,
+then inverse rotations''. If the second half of a block starts with the same
+CZ layer that ends the first half, the two cancel for \emph{every} parameter
+value; with one-layer halves the circuit is then a product circuit. We
+therefore let each half start and end with a rotation layer:
+$X(\boldsymbol\alpha)=R_1\,W\,R_2\cdots W\,R_D$ (the $D$-layer HEA without its
+final CZ layer, which is diagonal and so invisible to both costs), followed by
+an $X^\dagger$-shaped sub-circuit $R'_D\,W\cdots W\,R'_1$ with its own angles
+$\boldsymbol\beta$, where $R'$ applies $R_Z$ before $R_Y$. Setting
+$\boldsymbol\beta=-\boldsymbol\alpha$ (in mirrored order) makes $V=I$ exactly.
+This identity-block HEA, \texttt{ib\_hea}$(n,D)$, has $2D$ rotation layers,
+$2(D-1)$ CZ layers and $4nD$ parameters; we use $D=\lceil\log_2 n\rceil$.
+\emph{All three} initializations are run on this circuit, so they differ only
+in the starting angles. A unit test checks that its CZ layers survive (the
+output state is entangled at generic angles).
+
+\paragraph*{Teacher task} At $V=I$ and $\ket{\psi_0}=\ket{0}^{\otimes n}$ the
+identity initialization would sit exactly at the minimum. We therefore draw a
+teacher $\boldsymbol\theta^*\sim U[0,2\pi]$ of the same circuit, set
+$\ket{\psi_0}=V(\boldsymbol\theta^*)^\dagger\ket{0}^{\otimes n}$, and train
+$V(\boldsymbol\theta)$ to map it back to $\ket{0}^{\otimes n}$. This
+concretizes the synopsis' ``fixed random shallow circuit $W_0$'' with
+$W_0=V(\boldsymbol\theta^*)^\dagger$. The task is exactly solvable
+($\boldsymbol\theta=\boldsymbol\theta^*$), and the identity initialization starts
+at the infidelity of a random state. For the variance study, a fresh teacher is
+drawn per parameter draw and shared by all initializations. For training, each
+of 10 seeds fixes one teacher and one set of initial angles, shared by every
+(cost, initialization, gradient-mode) cell.
+
+\paragraph*{Training protocol} Adam (learning rate 0.05), 300 iterations, with
+the cost itself as the loss. Gradients are either exact (control) or
+parameter-shift estimates in which each of the $2\times4nD$ shifted circuits is
+estimated from 1024 samples (primary, for the reason given under Run~A below).
+Grid: $n\in\{4,6,8,10,12\}$, both training costs, three initializations, 10
+seeds. Shot-noise runs stop at $n=10$: at $n=12$ one run (300 iterations
+$\times$ 384 shifted circuits of $2^{12}$ amplitudes) takes about 2.5\,h on our
+hardware, and the pre-registered criterion needs only $n\ge10$; $n=12$ is run
+with exact gradients.
+Success is $\CG\le0.1$ (fidelity $\ge0.9$), measured exactly, for \emph{both}
+training costs, because $\CL\le\CG\le n\,\CL$ means a small $\CL$ alone does not
+imply a good state. We report the number of seeds that reach the target and the
+median iteration at which they do, with unsuccessful runs counted as
+$>300$.
 
 \subsection{Classification task (H4)}
 \paragraph*{Data and folds} The Breast Cancer Wisconsin (Diagnostic)
@@ -265,6 +307,13 @@ configuration with exact gradients. Besides the metrics, we log at every step
 the norm of the exact gradient (the signal) and the norm of the
 shot-estimated gradient the optimizer actually receives. Their ratio measures
 how much of each update is signal.
+
+\paragraph*{Runs C and D (Week 2)} Run~B kept 98--100\% of the true gradient
+norm, so the shot noise was too small to matter. Week~2 makes the signal
+small relative to the noise in two ways, keeping everything else identical to Run~B:
+Run~C goes to $n=10$ ($L=4$, 80 parameters) with 1024 shots and an exact
+control; Run~D keeps $n=8$ and lowers the budget to 32 and 128 shots per
+circuit, with Run~B's 1024-shot and exact runs as references.
 
 \paragraph*{Sampled evaluation} As the NB11 harness requires, every trained
 model is also evaluated on its test fold by sampling: the circuit is run on
@@ -364,18 +413,52 @@ quantum models share the circuit and differ only in the readout.}
 \end{figure*}
 
 \subsection{Noise and hardware}\label{sec:noise}
-Noisy simulations use Qiskit Aer with depolarizing (unital) and amplitude-damping
-(non-unital) channels, plus a noise model taken from an IBM fake backend. This
-separates cost-induced from noise-induced flattening~\cite{wang2021,singkanipa2025}
-and tests whether the local cost holds up better under non-unital noise~\cite{mele2026}.
+Noise can flatten a landscape by itself~\cite{wang2021,singkanipa2025}, and
+non-unital noise may protect local costs~\cite{mele2026}. To separate these
+effects from the cost-induced plateau we compute \emph{exact} gradients of
+noisy circuits.
+
+\paragraph*{Channel models} A density-matrix extension of our simulator
+stores $\rho$ as a state vector on $2n$ qubits, so a unitary $U$ acts as $U$ on the row
+index and $U^*$ on the column index. After every gate it applies a channel:
+two-qubit depolarizing $\rho\mapsto(1-p_2)\rho+p_2\,I/4\otimes\mathrm{Tr}_{ab}\rho$
+after each CZ and single-qubit depolarizing with $p_1=p_2/10$ after each
+rotation (unital); or amplitude damping with $\gamma=p_2$ on both qubits of each
+CZ and $\gamma=p_2/10$ after each rotation (non-unital). Gradients use the
+adjoint rule in the Heisenberg picture: with $\Lambda_j$ the observable
+propagated back through the adjoint channels to just after gate $j$, and
+$\rho_j$ the state there, $\partial_j\langle O\rangle=\mathrm{Im}\,\mathrm{Tr}[\Lambda_jP_j\rho_j]$.
+Adjoint channels are contractive, so the backward pass is stable at any
+noise strength. The simulator matches Qiskit Aer's density matrices to
+$10^{-12}$ for every channel, and its gradients match finite differences. We
+run three studies with 200 uniform draws per cell on the standard HEA from
+$\ket{0}^{\otimes n}$, using the same draws for every noise model:
+$n\in\{2,4,6,8\}$ at $L=\lceil\log_2n\rceil$ and $p_2=0.01$; depth
+$L\in\{1,\dots,12\}$ at $n=6$; and strength $p_2\in[10^{-3},10^{-1}]$ at
+$n=6$, $L=6$.
+
+\paragraph*{Device noise model} Qiskit Aer (density-matrix method) with the
+noise model of the \texttt{FakeFez} backend (IBM Heron~r2, native CZ). This
+includes calibrated gate depolarizing, thermal relaxation and readout assignment
+errors. The HEA is placed on the contiguous segment of the linear chain of
+physical qubits 0--15 with the lowest summed CZ and readout error, so every
+brickwork CZ is a native coupling and no SWAPs are inserted. We take exact output
+probabilities (readout errors applied as per-qubit assignment matrices) and
+compute parameter-shift gradients for $R_Y$ on qubit~1 in the first and in the
+last layer, at $n\in\{2,4,6,8\}$, $L=\lceil\log_2n\rceil$, 200 draws. From the
+same probabilities we compute the variance that 4096-shot sampling adds to a
+parameter-shift estimate, $[\sigma^2(\boldsymbol\theta_+)+\sigma^2(\boldsymbol\theta_-)]/4N$,
+averaged over draws. This is the shot-noise floor that a Week~3 hardware
+measurement has to exceed.
+
 On IBM hardware we estimate parameter-shift gradients at $n\in\{2,4,6\}$,
 $L=\lceil\log_2 n\rceil$, with 30--50 random draws and 4096 shots, using
 the same circuits for both costs, and report the shot-noise contribution
 next to each measured variance.
 
 \subsection{Software and reproducibility}
-Python~3.14, NumPy~2.5, scikit-learn~1.9.1, Qiskit~2.5.1 and Qiskit
-Aer~0.17.2. One seed constant (0) is used throughout, with repeat seeds spaced by
+Python~3.14, NumPy~2.5, scikit-learn~1.9.1, Qiskit~2.5.1, Qiskit
+Aer~0.17.2 and Qiskit IBM Runtime~0.48 (fake backends). One seed constant (0) is used throughout, with repeat seeds spaced by
 100. Every number and figure is produced by a script in
 \texttt{experiments/} or \texttt{viz/}. Results are saved as CSV, and the
 fold file and the test suite are part of the repository.
@@ -383,7 +466,262 @@ fold file and the test suite are part of the repository.
 % =====================================================================
 \section{Results}
 % =====================================================================
-\emph{To be written in Week~2.}
+\emph{Draft, Week~2: noise-free and noise-model results. Hardware follows in Week~3.}
+All numbers below are generated from \texttt{results/*.csv} (summaries in
+\texttt{results/week1\_summary.md} and \texttt{week2\_summary.md}).
+
+\subsection{Cost locality and depth (H1, H2)}
+Fig.~\ref{fig:scaling} shows $\Var[\partial_1C]$ for both costs at the three
+depths. At $L=\lceil\log_2n\rceil$ the global-cost variance falls from
+$4.4\times10^{-2}$ at $n=2$ to $4.0\times10^{-8}$ at $n=14$, while the local-cost
+variance falls only to $2.7\times10^{-4}$, about $6800\times$ larger at
+$n=14$. The fitted decay rates are $b_G=1.17$ and $b_L=0.29$. This meets
+both parts of the H1 criterion: the rates are clearly separated and the gap at
+$n=14$ exceeds $10\times$. \textbf{H1 is supported.} With depth, $b_G$ approaches $\ln4\approx1.39$
+($b_G=1.33$ at $L=n$), the rate expected for the all-zeros projector once the
+circuit behaves like a 2-design ($\Var\propto4^{-n}$). Raising the depth to $L=n$ increases $b_L$ to
+$0.37$ (and $b_G$ to 1.33), so the local cost loses part of its advantage at
+linear depth, as~\cite{cerezo2021} predicts. \textbf{H2 is supported.}
+
+\emph{Correction.} The Week-1 fits included $n=2$, but the synopsis
+pre-registered the range $n=4,\dots,14$. The values above are refits over
+$n\ge4$. The Week-1 values with $n=2$ (and their bootstrap intervals,
+Fig.~\ref{fig:scaling}) are $b_G=1.20\,[1.15,1.26]$, $b_L=0.37\,[0.36,0.38]$ at
+$L=\lceil\log_2n\rceil$ and $b_L=0.44\,[0.43,0.46]$ at $L=n$. Neither verdict
+depends on the range. Week-2 fits use $n\ge4$ throughout.
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{variance_scaling}
+\caption{Noise-free gradient variance of $\theta_1$ (first-layer $R_Y$ on
+qubit 1) vs.\ $n$ for three depths, uniform initialization, exact gradients,
+shaded 95\% bootstrap intervals (200 draws, 2000 for $n\ge10$). Annotated
+rates are the Week-1 fits over $n=2,\dots,14$.}
+\label{fig:scaling}
+\end{figure*}
+
+\subsection{Initialization (H3)}
+\paragraph*{Initial variance} Fig.~\ref{fig:init} compares the three
+initializations on the identity-block circuit with teacher targets.
+Neither alternative changes the scaling: the global-cost decay rate is
+$b_G=1.35\,[1.30,1.38]$ (uniform), $1.29\,[1.25,1.32]$ (reduced domain) and
+$1.26\,[1.21,1.30]$ (identity blocks). At $n\ge10$ the identity-block
+variance is $1.5$--$2.5\times$ the uniform one (largest 95\% upper bound:
+$3.7\times$ at $n=12$), and the reduced domain gives $1.1$--$1.3\times$ (intervals
+include 1). The pre-registered threshold is $10\times$, so \textbf{the variance
+part of H3 is not supported}. The local cost gains a similar, consistent factor
+(identity: $2.1$--$2.2\times$, all intervals above 1) but keeps its slow decay
+($b_L\approx0.31$--$0.34$).
+
+The reason is the target. At the identity, $\partial\CG$ is proportional to the
+overlap of $\ket{\psi_0}$ with states one generator away from it, and for a random
+target that overlap is itself exponentially small. Identity blocks avoid the
+randomness of the \emph{circuit} but not the remoteness of the \emph{target}.
+The reduced domain with $a=\pi/\sqrt{L}$ is still wide for $L\le8$ (for
+$L=8$, $a\approx1.1$ rad). Narrowing it to $a=\pi/(4\sqrt L)$ raises the global
+ratio only to $1.8$--$1.9\times$ at $n\ge12$
+(Fig.~\ref{fig:reducedwidth}, ablation).
+
+\paragraph*{Training} Fig.~\ref{fig:task} shows the teacher-state task. Every
+setting trains reliably up to $n=8$, and the success rate falls at $n=10$--12.
+\textbf{Neither alternative initialization trains faster.} With 1024-shot
+gradients at $n=10$ (primary), the median number of iterations to $\CG\le0.1$
+for the global cost is 184 (uniform), 170 (reduced domain) and 166 (identity
+blocks). The bootstrap intervals for the differences in medians span about
+$\pm140$ iterations (Mann--Whitney $p=0.73$, $0.79$). For the local cost the
+order reverses: 149, 174 and 174 ($p=0.57$, $0.85$). The exact-gradient control
+agrees at $n=10$ (global: 98, 112, 104) and at $n=12$ (global: 136, 209, 171;
+local: 180, 136, 166). There, too, every $p\ge0.36$, and identity blocks never
+reach a higher success rate than uniform. The
+alternative starts are therefore not faster at any $n\ge10$ we ran, and
+\textbf{H3 is not supported} on either criterion. This matches the variance
+result: a $2\times$ larger initial variance is a $\sqrt2$ larger gradient,
+which Adam's per-parameter normalization largely removes.
+
+Two further observations shape the interpretation of H4 below. First, at these
+sizes the global cost trains as fast as the local one, although its initial
+gradient norm is $22\times$ smaller at $n=10$ (0.005 vs.\ 0.114). With exact
+gradients this is the Adam scale invariance noted under Run~A; the costs reach
+the target at a median of 104 and 114 iterations. Second, shot noise does not
+erase the global signal at $n=10$, because the shot noise of $\CG$ shrinks with
+it. A 1024-shot estimate of $P(0^n)\approx3\times10^{-4}$ has variance
+$P/N$, not $1/(4N)$. The resulting parameter-shift noise norm, about
+$\sqrt{4nD\,P/(2N)}\approx0.005$, is of the same size as the true gradient
+norm, so the optimizer still sees a usable direction. Shot noise does cost
+something: training is $1.6\times$ slower than with exact gradients for both
+costs (median 171 vs.\ 104 iterations, global), and the success rate drops from
+$0.93$ to $0.70$ (global) and to $0.80$ (local). Because the noise norm scales as
+$\sqrt{P}\sim2^{-n/2}$ but the gradient norm as $e^{-b_Gn/2}$ with $b_G\approx1.3$,
+this signal-to-noise ratio should fall by roughly $e^{-0.3n}$. On this
+extrapolation, which we have not tested, the global cost would stall at
+$n\gtrsim12$ for 1024 shots.
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{init_variance}
+\caption{H3: initial gradient variance on the identity-block HEA
+(\texttt{ib\_hea}, $D=\lceil\log_2n\rceil$) with a fresh teacher target per draw.
+Left, centre: $\Var[\partial_1C]$ for the three initializations, with decay rates over
+$n=4..14$. Right: ratio to uniform initialization with 95\% bootstrap intervals;
+the dotted line is the pre-registered $10\times$ threshold, and the grey band is $n\ge10$.}
+\label{fig:init}
+\end{figure*}
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{task_training}
+\caption{H3: teacher-state training (\texttt{ib\_hea}, Adam 0.05, 10 seeds).
+Left: median exact $\CG$ over seeds during training with the global (orange) or
+local (blue) cost as the loss, for 1024-shot parameter-shift gradients (top,
+$n=6,8,10$) and exact gradients (bottom, $n=8,10,12$). The dotted line is the
+success threshold $\CG=0.1$. Right: fraction of seeds reaching it within 300
+iterations.}
+\label{fig:task}
+\end{figure*}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{init_reduced_width}
+\caption{Ablation: width of the reduced domain. Ratio of the initial
+variance to the uniform one for $a\in\{\tfrac14,\tfrac12,1\}\times\pi/\sqrt L$.}
+\label{fig:reducedwidth}
+\end{figure}
+
+\subsection{Learning through a global vs.\ a local readout (H4)}
+\paragraph*{Runs A and B (Week 1)} With cross-entropy and exact gradients
+(Run~A), the two readouts reach the same test AUC (global $0.976\to0.948$,
+local $0.978\to0.962$ for $n=4\to10$), all below logistic regression, the
+RBF-SVM and the MLP ($\approx0.99$). With the Brier loss and 1024-shot
+gradients (Run~B, Fig.~\ref{fig:shots}), the global readout's initial gradient is
+2--5$\times$ smaller than the local one, but a 32-sample batch still keeps
+98--100\% of the true gradient norm, and shot-trained and exact-trained models
+match (global $0.974\to0.951$, local $0.981\to0.979$ for $n=4\to8$).
+
+\paragraph*{Runs C and D (Week 2)} Fig.~\ref{fig:shotsext} shows both runs.
+At $n=10$ with 1024 shots (Run~C), the test AUC is $0.941\pm0.019$ for the global
+readout and $0.970\pm0.017$ for the local one. The paired local$-$global
+difference over the 15 fold--seed pairs is $+0.029\,[0.016,0.042]$ (Wilcoxon
+$p=0.002$). This exceeds one standard deviation, so \textbf{the pre-registered
+falsifier of H4 is not triggered}: the curves are separated at the largest $n$.
+The gap also grows with $n$ up to $n=8$ ($+0.007$, $+0.015$, $+0.028$ for
+$n=4,6,8$ in Run~B) and then levels off ($+0.029$ at $n=10$).
+
+Three observations show that this gap is not the barren-plateau mechanism H4
+was meant to capture, namely slower learning because the global gradient
+drowns in shot noise.
+(i) The gap is the same without shot noise: $+0.026\,[0.011,0.042]$ in the
+exact-gradient control at $n=10$, and $+0.028$ in both arms at $n=8$.
+(ii) The global readout does not learn more slowly. Both readouts reach 95\% of
+their final AUC gain within 2 epochs at $n=10$ and within 3--4 epochs at every shot
+budget at $n=8$. The global readout converges just as fast, to a lower AUC.
+(iii) Cutting the budget $32\times$ (Run~D) leaves both readouts essentially
+unchanged (global $0.951\to0.950\to0.951$ and local $0.979\to0.976\to0.972$ for
+1024, 128 and 32 shots), although at 32 shots only 81\% (global) and 73\%
+(local) of the gradient norm the optimizer sees is signal. As in the teacher
+task, the global readout keeps \emph{more} of its signal than the local one,
+because the shot noise of $P(0^n)$ shrinks with $P$.
+The global readout therefore reaches a lower AUC because of the function class
+it gives the classifier, not because of how it trains. At these sizes,
+1024 shots resolve its gradient well (98--99\% signal at $n=10$). Balanced accuracy
+at the fixed $p\ge0.5$ threshold reverses the order (global $0.78$, local
+$0.63$ at $n=10$), which reflects the arbitrary calibration of the raw
+readouts discussed under Metrics, not ranking quality.
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{shot_training}
+\caption{Run B: test AUC (top) and gradient norms (bottom) for 1024-shot
+training (solid) and the exact-gradient control (dotted); mean over 5 folds
+$\times$ 3 seeds, band $\pm1$ s.d.}
+\label{fig:shots}
+\end{figure*}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{shot_training_ext}
+\caption{Runs C and D: test AUC (top) and the fraction of the used gradient norm
+that is signal (bottom), mean over 5 folds $\times$ 3 seeds. Left: $n=10$, 1024
+shots and exact control. Right: $n=8$ at 32, 128 and 1024 shots (the last two
+references are Run~B).}
+\label{fig:shotsext}
+\end{figure}
+
+\subsection{Noise}
+\paragraph*{Unital vs.\ non-unital channels} Fig.~\ref{fig:noise} shows the
+density-matrix results. At $L=\lceil\log_2n\rceil$ and $p_2=0.01$ (a), noise
+lowers both variances by at most 20\% up to $n=8$. The cost-induced gap between
+$\CG$ and $\CL$ is orders of magnitude larger, so at this depth the plateau is
+caused by the cost, not by the noise. The depth study (b) separates the two
+mechanisms. Without noise the variances saturate once the circuit is deep
+enough (for $\CG$ from $L\approx4$), whereas with
+noise they keep falling with $L$. At $L=12$ depolarizing noise has removed
+$67\%$ of the global and $53\%$ of the local variance. This continued decay with
+depth is the noise-induced barren plateau~\cite{wang2021}. Per layer (c), the
+noise suppresses all layers by a similar factor. The noiseless local cost
+already shows a light-cone signature: its variance drops for the last few
+layers, because a gate near the measurement has a small forward light cone and
+reaches only a few of the $n$ single-qubit terms of $\CL$.
+
+At these strengths amplitude damping behaves almost like depolarizing noise.
+It separates only at strong noise (d): at $p_2=0.1$ the global variance keeps
+$12\%$ of its noiseless value under damping but only $2\%$ under depolarizing
+noise, and the local variance keeps $10\%$ vs.\ $7\%$. Here the non-unital channel
+protects the \emph{global} cost more, because damping pushes the state towards
+$\ket{0}^{\otimes n}$, which is exactly the zero-cost state of $\CG$.
+We see no sign that only the last layers keep their gradients, as predicted
+for local costs under non-unital noise~\cite{mele2026}, up to
+$L=12$ and $p_2=0.1$. That prediction concerns a deeper, more strongly damped
+regime than our circuits reach.
+
+\paragraph*{Device noise model} Under the \texttt{FakeFez} noise model
+(Fig.~\ref{fig:fake}) the variances stay within $15\%$ of the noiseless
+values up to $n=8$ for both parameters and both costs (ratio $0.85$--$0.99$).
+Readout error accounts for at most a few percent. The 4096-shot floor lies
+$36$--$4300\times$ below the measured variances. The smallest margin is for $\CG$
+at $n=8$ ($37$--$48\times$), and that margin falls with $n$ at roughly the
+global decay rate. For the Week-3 hardware run at $n\le6$ the margin is
+$\ge180\times$, so the global/local gap should be resolvable with 4096 shots
+and 30--50 draws. Statistical precision, not shot noise, will be the
+limiting factor: with 50 draws, the heavy-tailed global-cost variance will have a
+wide interval (see the gradient-variance protocol in the Methods).
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{noise_variance}
+\caption{Exact gradients of noisy circuits (HEA, $\ket{0}^{\otimes n}$, uniform
+initialization, 200 draws; same draws for every noise model). (a) $\Var[\partial_1C]$
+vs.\ $n$ at $L=\lceil\log_2n\rceil$, $p_2=0.01$. (b) Variance averaged over
+parameters vs.\ depth, $n=6$. (c) Per-layer variance at $n=6$, $L=12$.
+(d) Variance relative to noiseless vs.\ noise strength, $n=6$, $L=6$.}
+\label{fig:noise}
+\end{figure*}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{fake_backend}
+\caption{\texttt{FakeFez} noise model (Aer density matrix, exact probabilities
+including readout error) vs.\ noiseless, at the same 200 draws, with 95\% bootstrap
+intervals. Dotted: variance added by 4096-shot parameter-shift estimation.}
+\label{fig:fake}
+\end{figure}
+
+\subsection{Status of the hypotheses}
+\begin{table}[t]
+\centering
+\caption{Hypotheses after Week 2 (noise-free and noise-model simulation).}
+\label{tab:status}
+\begin{tabular}{@{}lp{0.70\columnwidth}@{}}
+\toprule
+H1 & Supported: $b_G=1.17$ vs.\ $b_L=0.29$ ($n\ge4$), $6800\times$ at $n=14$.\\
+H2 & Supported: $b_L$ $0.29\to0.37$ from $L=\lceil\log_2n\rceil$ to $L=n$.\\
+H3 & Not supported: variance gain $\le2.5\times$ at $n\ge10$ (needed $10\times$), and no
+faster training at $n=10$ (shots) or $n=12$ (exact), all $p\ge0.36$.\\
+H4 & Falsifier not triggered (local$-$global AUC $+0.029$, $>1$ s.d., at $n=10$), but the
+gap is identical with exact gradients and learning speed is equal: a readout
+capacity effect, not a plateau effect.\\
+\bottomrule
+\end{tabular}
+\end{table}
 
 \bibliographystyle{IEEEtran}
 \bibliography{refs}

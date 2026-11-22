@@ -49,3 +49,19 @@ def save(fig, name):
     for ext in ("pdf", "png"):
         fig.savefig(FIG_DIR / f"{name}.{ext}")
     plt.close(fig)
+
+
+# Week 2: initializations and noise models are told apart by line style and
+# marker; colour keeps meaning "which cost".
+INIT_STYLE = {"uniform": dict(ls="-", marker="o"),
+              "reduced": dict(ls="--", marker="s"),
+              "identity": dict(ls=":", marker="^")}
+INIT_LABELS = {"uniform": "uniform", "reduced": r"reduced domain ($a=\pi/\sqrt{L}$)",
+               "identity": "identity blocks"}
+NOISE_STYLE = {"noiseless": dict(ls="-", marker="o"),
+               "depolarizing": dict(ls="--", marker="s"),
+               "amplitude_damping": dict(ls=":", marker="^"),
+               "fake": dict(ls="-.", marker="D")}
+NOISE_LABELS = {"noiseless": "noiseless", "depolarizing": "depolarizing (unital)",
+                "amplitude_damping": "amplitude damping (non-unital)",
+                "fake": "FakeFez noise model"}

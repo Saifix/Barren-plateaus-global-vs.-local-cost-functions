@@ -25,19 +25,23 @@ def sample_gradients(n, L, n_draws, rng, costs=("global", "local"), chunk=50):
     return out
 
 
-def variance_stats(grads, n, L, k_fixed=0):
-    """(Var of dC/dtheta_k at fixed k, Var averaged over the non-trivial k)."""
-    keep = np.setdiff1d(np.arange(grads.shape[1]), structurally_zero_params(n, L))
+def variance_stats(grads, n, L, k_fixed=0, keep=None):
+    """(Var of dC/dtheta_k at fixed k, Var averaged over the non-trivial k).
+
+    ``keep`` = indices to average over; default: all but the structurally zero
+    angles of the standard HEA (pass ``trivial_params`` for other circuits)."""
+    if keep is None:
+        keep = np.setdiff1d(np.arange(grads.shape[1]), structurally_zero_params(n, L))
     v = grads.var(axis=0, ddof=1)
     return float(v[k_fixed]), float(v[keep].mean())
 
 
-def bootstrap(grads, n, L, rng, n_boot=1000, k_fixed=0):
+def bootstrap(grads, n, L, rng, n_boot=1000, k_fixed=0, keep=None):
     """Bootstrap over parameter draws: ``(n_boot, 2)`` array of (fixed-k, mean-k) variances."""
     m = grads.shape[0]
     out = np.empty((n_boot, 2))
     for b in range(n_boot):
-        out[b] = variance_stats(grads[rng.integers(0, m, m)], n, L, k_fixed)
+        out[b] = variance_stats(grads[rng.integers(0, m, m)], n, L, k_fixed, keep)
     return out
 
 

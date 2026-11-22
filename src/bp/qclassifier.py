@@ -84,6 +84,7 @@ class QuantumClassifier:
     epochs: int = 60
     batch_size: int = 32
     seed: int = 0
+    chunk_rows: int = 4096          # shot mode: circuits simulated at once
     theta: np.ndarray = field(default=None, repr=False)
 
     def __post_init__(self):
@@ -120,8 +121,16 @@ class QuantumClassifier:
         P, B = self.n_params, len(X)
         shifts = np.vstack([np.zeros(P), np.eye(P) * np.pi / 2, -np.eye(P) * np.pi / 2])
         thetas = np.repeat(theta[None] + shifts, B, axis=0)            # (2P+1)*B rows
-        psi0 = np.tile(angle_encode(X), (2 * P + 1, 1))
-        p_hat = self.sampled_readout(self.circuit.probabilities(thetas, psi0), rng)
+        psi_x = angle_encode(X)
+        # Simulate in row chunks to bound memory; multinomial draws are made row
+        # by row, so the random stream (and the result) does not depend on chunk.
+        rows = len(thetas)
+        step = max(B, (self.chunk_rows // B) * B)
+        p_hat = np.empty(rows)
+        for s in range(0, rows, step):
+            th = thetas[s:s + step]
+            psi0 = np.tile(psi_x, (len(th) // B, 1))
+            p_hat[s:s + step] = self.sampled_readout(self.circuit.probabilities(th, psi0), rng)
         p_hat = p_hat.reshape(2 * P + 1, B)
         dp = (p_hat[1:P + 1] - p_hat[P + 1:]) / 2                       # (P, B)
         g = dp @ dloss_dp(self.loss, p_hat[0], t)
