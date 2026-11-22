@@ -1,4 +1,10 @@
 \documentclass[conference]{IEEEtran}
+\usepackage{iftex}
+\ifXeTeX                 % e.g. Tectonic: IEEEtran's Times (ptm) has no TU shapes
+  \usepackage[no-math]{fontspec}
+  \setmainfont{texgyretermes}[Extension=.otf, UprightFont=*-regular,
+    BoldFont=*-bold, ItalicFont=*-italic, BoldItalicFont=*-bolditalic]
+\fi
 \usepackage{amsmath,amssymb}
 \usepackage{booktabs}
 \usepackage{graphicx}

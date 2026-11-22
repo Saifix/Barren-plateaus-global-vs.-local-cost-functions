@@ -145,7 +145,9 @@ test suite on Python 3.12 and 3.14.
 `report/report.tex` uses IEEEtran, TikZ with the `quantikz2` library, and BibTeX
 (`refs.bib`), and reads figures from `../figures/`. On Overleaf, upload
 `report/` and `figures/` with the same layout. Locally:
-`pdflatex report && bibtex report && pdflatex report && pdflatex report`.
+`pdflatex report && bibtex report && pdflatex report && pdflatex report`, or
+`tectonic report.tex` (XeTeX; the preamble then switches to TeX Gyre Termes,
+because IEEEtran's Times has no Unicode shapes).
 
 ## Timeline
 
