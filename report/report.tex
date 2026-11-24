@@ -12,7 +12,7 @@
 \usepackage{tikz}
 \usetikzlibrary{quantikz,positioning,arrows.meta,fit,backgrounds,calc}
 \providecommand{\ket}[1]{\left|#1\right\rangle}
-\graphicspath{{../figures/}}
+\graphicspath{{../week1/figures/}{../week2/figures/}}
 
 % Project colours (src/bp/style.py): global = vermilion, local = blue
 \definecolor{cglobal}{HTML}{E4572E}
@@ -466,7 +466,7 @@ next to each measured variance.
 Python~3.14, NumPy~2.5, scikit-learn~1.9.1, Qiskit~2.5.1, Qiskit
 Aer~0.17.2 and Qiskit IBM Runtime~0.48 (fake backends). One seed constant (0) is used throughout, with repeat seeds spaced by
 100. Every number and figure is produced by a script in
-\texttt{experiments/} or \texttt{viz/}. Results are saved as CSV, and the
+\texttt{week$k$/experiments/} or \texttt{week$k$/plots/}. Results are saved as CSV, and the
 fold file and the test suite are part of the repository.
 
 % =====================================================================

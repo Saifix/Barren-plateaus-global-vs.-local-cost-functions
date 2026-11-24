@@ -17,7 +17,7 @@ import pandas as pd
 from bp import SEED
 from bp.ansatz import depth_log
 from bp.config import BATCH, CLF_NS, EPOCHS, INIT_SEEDS, LR_QUANTUM, SHOTS
-from bp.data import ROOT, load_data, load_folds, make_preprocessor
+from bp.data import load_data, load_folds, make_preprocessor, results_dir
 from bp.metrics import scores
 from bp.qclassifier import QuantumClassifier
 
@@ -76,7 +76,7 @@ def main():
     print(f"Aer evaluation done at {time.time() - t0:.0f}s", flush=True)
 
     # (the classical leakage reference, with many permutations, is 05_leakage_check.py)
-    out = ROOT / "results"
+    out = results_dir(1)
     pd.DataFrame(curves).to_csv(out / "qclf_curves.csv", index=False)
     df = pd.DataFrame(final)
     df.to_csv(out / "qclf_final.csv", index=False)

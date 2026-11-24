@@ -4,12 +4,12 @@ import pandas as pd
 
 from bp.ansatz import depth_log
 from bp.config import CLF_NS, SHOTS
-from bp.data import ROOT
+from bp.data import results_dir
 from bp.qiskit_backend import resources
 from bp.style import COLORS, IEEE_FULL, LABELS, save, use_style
 
 use_style()
-R = ROOT / "results"
+R = results_dir(1)
 q = pd.read_csv(R / "qclf_curves.csv")
 m = pd.read_csv(R / "mlp_curves.csv")
 qf = pd.read_csv(R / "qclf_final.csv")
@@ -43,7 +43,7 @@ for j, n in enumerate(CLF_NS):
 h, lab = axes[0, 0].get_legend_handles_labels()
 fig.legend(h, lab, loc="upper center", ncol=3, bbox_to_anchor=(0.5, 1.04))
 fig.tight_layout(h_pad=0.4, w_pad=0.4)
-save(fig, "training_curves")
+save(fig, "training_curves", 1)
 
 
 # ------------------------------------------------------------- tables
@@ -116,4 +116,4 @@ for n in CLF_NS:
     r = resources(n, depth_log(n))
     lines.append(f"| {n} | {r['layers']} | {r['params']} | {r['cz']} | {r['depth']} | {r['circuits_per_gradient_ps']} |")
 (R / "week1_summary.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
-print("\n".join(lines))
+print("wrote week1/results/week1_summary.md")      # the table has non-ASCII characters

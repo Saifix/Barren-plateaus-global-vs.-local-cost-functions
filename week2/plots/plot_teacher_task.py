@@ -5,12 +5,12 @@ import pandas as pd
 from matplotlib.lines import Line2D
 
 from bp.config import TASK_ITERS, TASK_SHOTS, TASK_TARGET
-from bp.data import ROOT
+from bp.data import results_dir
 from bp.style import COLORS, IEEE_FULL, INIT_LABELS, INIT_STYLE, LABELS, save, use_style
 
 use_style()
-c = pd.read_csv(ROOT / "results" / "task_curves.csv")
-fin = pd.read_csv(ROOT / "results" / "task_final.csv")
+c = pd.read_csv(results_dir(2) / "task_curves.csv")
+fin = pd.read_csv(results_dir(2) / "task_final.csv")
 SHOW = {"shots": [6, 8, 10], "exact": [8, 10, 12]}    # shot runs stop at n = 10
 
 fig, axes = plt.subplots(2, 4, figsize=(IEEE_FULL, 3.9),
@@ -53,5 +53,5 @@ handles += [Line2D([], [], color="k", ls=INIT_STYLE[i]["ls"], marker=INIT_STYLE[
             for i in ("uniform", "reduced", "identity")]
 fig.legend(handles=handles, loc="upper center", ncol=5, bbox_to_anchor=(0.5, 1.05), fontsize=6.5)
 fig.tight_layout(h_pad=0.6, w_pad=0.5)
-save(fig, "task_training")
+save(fig, "task_training", 2)
 print("saved figures/task_training")

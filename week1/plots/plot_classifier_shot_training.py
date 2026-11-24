@@ -5,11 +5,11 @@ from matplotlib.lines import Line2D
 
 from bp.ansatz import depth_log
 from bp.config import SHOT_NS, SHOTS_TRAIN
-from bp.data import ROOT
+from bp.data import results_dir
 from bp.style import COLORS, IEEE_FULL, LABELS, save, use_style
 
 use_style()
-c = pd.read_csv(ROOT / "results" / "shot_curves.csv")
+c = pd.read_csv(results_dir(1) / "shot_curves.csv")
 
 fig, axes = plt.subplots(2, len(SHOT_NS), figsize=(IEEE_FULL, 3.6), sharex=True, sharey="row")
 for j, n in enumerate(SHOT_NS):
@@ -40,5 +40,5 @@ handles = [Line2D([], [], color=COLORS["global"], label=LABELS["global"].replace
 fig.legend(handles=handles, loc="upper center", ncol=3,  # fills column-wise
            bbox_to_anchor=(0.5, 1.10))
 fig.tight_layout(h_pad=0.5, w_pad=0.5)
-save(fig, "shot_training")
+save(fig, "shot_training", 1)
 print("saved figures/shot_training")

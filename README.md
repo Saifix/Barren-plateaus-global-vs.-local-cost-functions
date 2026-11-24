@@ -2,9 +2,9 @@
 
 AI 631 Quantum Machine Learning, Fall 2026, Project #8 (QNN track)
 
-![Gradient variance vs. qubits for the global and local cost](figures/variance_scaling.png)
+![Gradient variance vs. qubits for the global and local cost](week1/figures/variance_scaling.png)
 
-**Interactive 3D explorer:** open [`figures/landscape_3d.html`](figures/landscape_3d.html)
+**Interactive 3D explorer:** open [`week1/figures/landscape_3d.html`](week1/figures/landscape_3d.html)
 in a browser. Drag to rotate, press *Play n* to watch the global landscape flatten.
 Deep links work for slides, e.g. `landscape_3d.html?n=12&mode=random`.
 
@@ -26,15 +26,15 @@ The local cost averages single-qubit probabilities,
 |---|---|
 | Verified simulator + exact (adjoint) gradients, analytic unit test | `src/bp/sim.py`, `tests/` (22 tests) |
 | Data pipeline, fixed folds (NB11 protocol + fold-wise PCA) | `src/bp/data.py`, `data/folds.json` |
-| Classical baselines (majority, logistic, tuned RBF-SVM, param-matched MLP) | `experiments/02_classical_baselines.py` |
-| First quantum model, global vs. local readout, exact + 2048-shot Aer evaluation (Run A) | `experiments/03_quantum_classifier.py` |
-| Shot-noise training, 1024-shot parameter shift vs. exact control (Run B, H4) | `experiments/06_shot_training.py` |
-| Label-shuffle leakage checks | `experiments/03_…`, `experiments/05_leakage_check.py` |
-| Noise-free gradient-variance sweep, n = 2…14, three depths | `experiments/01_variance_sweep.py` |
-| Interactive 3D cost-landscape explorer | `experiments/04_landscape.py`, `viz/make_landscape_html.py` |
+| Classical baselines (majority, logistic, tuned RBF-SVM, param-matched MLP) | `week1/experiments/02_classical_baselines.py` |
+| First quantum model, global vs. local readout, exact + 2048-shot Aer evaluation (Run A) | `week1/experiments/03_quantum_classifier.py` |
+| Shot-noise training, 1024-shot parameter shift vs. exact control (Run B, H4) | `week1/experiments/06_classifier_shot_training.py` |
+| Label-shuffle leakage checks | `week1/experiments/03_…`, `05_leakage_check.py` |
+| Noise-free gradient-variance sweep, n = 2…14, three depths | `week1/experiments/01_variance_sweep.py` |
+| Interactive 3D cost-landscape explorer | `week1/experiments/04_landscape.py`, `week1/plots/make_landscape_html.py` |
 | Report: introduction and methods | `report/report.tex` |
 
-Headline numbers are in [`results/week1_summary.md`](results/week1_summary.md).
+Headline numbers are in [`week1/results/week1_summary.md`](week1/results/week1_summary.md).
 In brief:
 
 * **H1 supported.** At L = ⌈log₂ n⌉ the fitted decay rate of Var[∂C] is
@@ -57,22 +57,22 @@ In brief:
   All quantum models stay below logistic regression, the RBF-SVM and the MLP
   (AUC ≈ 0.99).
 
-![Training under shot noise vs. exact gradients](figures/shot_training.png)
+![Training under shot noise vs. exact gradients](week1/figures/shot_training.png)
 
 ## Week 2 status (Nov 22)
 
 | Deliverable | Where |
 |---|---|
 | Density-matrix simulator with exact adjoint gradients (depolarizing, amplitude damping) | `src/bp/density.py`, `tests/test_density.py` |
-| Identity-block circuit `ib_hea` and the three initializations | `src/bp/ansatz.py`, `tests/test_week2.py` |
-| H3 part 1: initial gradient variance by initialization, n = 2…14, width ablation | `experiments/07_init_variance.py` |
-| H3 part 2: teacher-state training, 10 seeds, shot-noise + exact gradients | `experiments/08_state_training.py`, `src/bp/state_task.py` |
-| H4 continued: Run C (n = 10) and Run D (32/128 shots, n = 8) | `experiments/09_shot_training_ext.py` |
-| Noise study: n, depth and strength sweeps | `experiments/10_noise_variance.py` |
-| IBM `FakeFez` device noise model (Aer density matrix + readout error) | `experiments/11_fake_backend.py` |
+| Identity-block circuit `ib_hea` and the three initializations | `src/bp/ansatz.py`, `tests/test_initialization_and_task.py` |
+| H3 part 1: initial gradient variance by initialization, n = 2…14, width ablation | `week2/experiments/07_init_variance.py` |
+| H3 part 2: teacher-state training, 10 seeds, shot-noise + exact gradients | `week2/experiments/08_teacher_task_training.py`, `src/bp/state_task.py` |
+| H4 continued: Run C (n = 10) and Run D (32/128 shots, n = 8) | `week2/experiments/09_classifier_runs_c_d.py` |
+| Noise study: n, depth and strength sweeps | `week2/experiments/10_noise_variance.py` |
+| IBM `FakeFez` device noise model (Aer density matrix + readout error) | `week2/experiments/11_fake_backend.py` |
 | Report: results section draft | `report/report.tex` |
 
-Headline numbers are in [`results/week2_summary.md`](results/week2_summary.md);
+Headline numbers are in [`week2/results/week2_summary.md`](week2/results/week2_summary.md);
 a plain-language overview is in [`PROJECT_OVERVIEW.md`](PROJECT_OVERVIEW.md).
 In brief:
 
@@ -97,27 +97,38 @@ In brief:
 * **FakeFez.** Variances stay within 15% of noiseless up to n = 8. The 4096-shot
   floor is ≥ 180× below the signal at n ≤ 6, so the Week 3 hardware run is feasible.
 
-![Initial gradient variance by initialization](figures/init_variance.png)
+![Initial gradient variance by initialization](week2/figures/init_variance.png)
 
 ## Repository layout
 
 ```
-src/bp/            library: simulator, ansatz & costs, data, baselines, classifier, Qiskit circuits, plot style
-experiments/       00 folds · 01 variance sweep · 02 baselines · 03 quantum classifier (Run A)
-                   04 landscape · 05 leakage check · 06 shot-noise training (Run B)
-                   07 init variance · 08 teacher-state training · 09 Runs C/D
-                   10 noise variance · 11 FakeFez noise model
-viz/               figure scripts (matplotlib), the 3D explorer generator, week2_summary.py
-tests/             simulator, density-matrix, pipeline and shot-gradient tests (Qiskit/Aer
-                   cross-checks, finite differences, parameter shift, closed form)
+week1/             Week 1 (Nov 15): pipeline, baselines, first quantum model, variance sweep
+  experiments/       00 folds · 01 variance sweep · 02 classical baselines · 03 quantum classifier (Run A)
+                     04 landscape · 05 leakage check · 06 classifier shot-noise training (Run B)
+  plots/             figure scripts, Week 1 summary, 3D explorer generator
+  results/           CSV outputs + week1_summary.md
+  figures/           PDF/PNG figures + landscape_3d.html
+week2/             Week 2 (Nov 22): initializations, teacher task, Runs C/D, noise, FakeFez
+  experiments/       07 init variance · 08 teacher-task training · 09 classifier Runs C/D
+                     10 noise variance · 11 FakeFez noise model
+  plots/             figure scripts + make_summary.py
+  results/           CSV outputs + week2_summary.md (results/cache/: run checkpoints, not committed)
+  figures/           PDF/PNG figures
+src/bp/            shared library used by every week: simulators, circuits & costs, data,
+                   baselines, classifier, H3 task, Qiskit circuits, plot style, paths
+tests/             automated checks that the library is correct (pytest): Qiskit/Aer cross-checks,
+                   finite differences, parameter shift, closed forms. They produce no results.
 data/folds.json    the one fold object used by every table
-results/           CSV outputs + week1_summary.md, week2_summary.md
-                   (results/cache/ holds per-run checkpoints; not committed)
-figures/           PDF/PNG figures + landscape_3d.html
-report/            IEEE report (report.tex, refs.bib)
+report/            IEEE report (report.tex, refs.bib) and the submitted weekly PDFs
+presentations/     progress-update slides
 synopsis/          initial project synopsis
-run_all.py         runs every experiment and figure script in order
+run_all.py         runs every experiment and plot script, week by week
 ```
+
+**Experiments vs. tests.** A script in `week*/experiments/` *produces results*
+(CSV files in that week's `results/`); a script in `week*/plots/` turns them into
+figures and summaries. A file in `tests/` *checks the code* (e.g. that the
+simulator's gradients match Qiskit and finite differences) and produces nothing.
 
 ## Reproduce
 
@@ -127,14 +138,14 @@ py -3.14 -m venv .venv
 .venv\Scripts\python -m pip install -e .
 .venv\Scripts\python -m pytest
 .venv\Scripts\python run_all.py              # everything; Week 2 adds ~1 day on 16 threads
-.venv\Scripts\python run_all.py --skip-slow  # skip 01, 03, 06–09, rebuild figures from results/
+.venv\Scripts\python run_all.py --skip-slow  # skip 01, 03, 06–09, rebuild figures from week*/results/
 ```
 
 Approximate times (16 logical cores): the variance sweep (01) takes ~2 h,
 dominated by n = 14 with 2000 draws. Run A (03) takes ~20 min and Run B (06)
 ~25 min. Week 2: 07 ~1 h, 10 and 11 ~30 min each; 08 (teacher-state training)
 ~5 h and 09 (Runs C/D) ~14 h, dominated by 1024-shot parameter-shift training at
-n = 10. Both write a checkpoint per finished run to `results/cache/` and resume
+n = 10. Both write a checkpoint per finished run to `week2/results/cache/` and resume
 from it when restarted; `BP_WORKERS` sets the number of worker processes.
 Everything else takes a minute or less. One seed constant (`bp.SEED = 0`);
 every experimental constant is in `src/bp/config.py`. GitHub Actions runs the
@@ -143,8 +154,8 @@ test suite on Python 3.12 and 3.14.
 ## Building the report
 
 `report/report.tex` uses IEEEtran, TikZ with the `quantikz2` library, and BibTeX
-(`refs.bib`), and reads figures from `../figures/`. On Overleaf, upload
-`report/` and `figures/` with the same layout. Locally:
+(`refs.bib`), and reads figures from `../week1/figures/` and `../week2/figures/`. On Overleaf, upload
+`report/`, `week1/figures/` and `week2/figures/` with the same layout. Locally:
 `pdflatex report && bibtex report && pdflatex report && pdflatex report`, or
 `tectonic report.tex` (XeTeX; the preamble then switches to TeX Gyre Termes,
 because IEEEtran's Times has no Unicode shapes).

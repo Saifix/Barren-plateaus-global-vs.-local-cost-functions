@@ -6,10 +6,10 @@ never needs a legend after the first slide.
 """
 from __future__ import annotations
 
-from pathlib import Path
-
 import matplotlib as mpl
 import matplotlib.pyplot as plt
+
+from .data import figures_dir
 
 COLORS = {
     "global": "#E4572E",     # vermilion
@@ -27,9 +27,6 @@ LABELS = {"global": "Global cost $C_G$", "local": "Local cost $C_L$",
 IEEE_COL = 3.5      # inches, single IEEE column
 IEEE_FULL = 7.16    # inches, full page width
 
-ROOT = Path(__file__).resolve().parents[2]
-FIG_DIR = ROOT / "figures"
-
 
 def use_style():
     mpl.rcParams.update({
@@ -44,10 +41,11 @@ def use_style():
     })
 
 
-def save(fig, name):
-    FIG_DIR.mkdir(exist_ok=True)
+def save(fig, name, week):
+    """Write week<week>/figures/<name>.pdf and .png."""
+    out = figures_dir(week)
     for ext in ("pdf", "png"):
-        fig.savefig(FIG_DIR / f"{name}.{ext}")
+        fig.savefig(out / f"{name}.{ext}")
     plt.close(fig)
 
 

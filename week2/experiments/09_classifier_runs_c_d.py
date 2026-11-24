@@ -6,7 +6,7 @@ Two ways to make the gradient signal small compared with its shot noise:
   Run C  n in RUN_C_NS (10 qubits, L = 4, 80 parameters), 1024 shots + exact control
   Run D  n = RUN_D_N (8), shots in RUN_D_SHOTS (32, 128); the exact control
          and the 1024-shot runs are those of Run B (same folds, seeds, settings)
-Everything else is identical to experiments/06_shot_training.py: Brier loss,
+Everything else is identical to week1/experiments/06_classifier_shot_training.py: Brier loss,
 Adam lr 0.05, batch 32, 30 epochs, 5 folds x 3 init seeds, test ROC-AUC primary,
 plus a 2048-shot Aer evaluation of every trained model.
 
@@ -28,7 +28,7 @@ from bp import SEED
 from bp.ansatz import depth_log
 from bp.config import (BATCH, INIT_SEEDS, LR_QUANTUM, RUN_C_NS, RUN_D_N, RUN_D_SHOTS,
                        SHOT_EPOCHS, SHOTS, SHOTS_TRAIN)
-from bp.data import ROOT, load_data, load_folds, make_preprocessor
+from bp.data import load_data, load_folds, make_preprocessor, results_dir
 from bp.metrics import scores
 from bp.qclassifier import QuantumClassifier
 
@@ -37,7 +37,7 @@ FOLDS = load_folds()
 MAX_WORKERS = int(os.environ.get("BP_WORKERS", 14))
 
 
-CACHE = ROOT / "results" / "cache" / "shot_ext"
+CACHE = results_dir(2) / "cache" / "shot_ext"
 
 
 def train_job(job):
@@ -91,7 +91,7 @@ def main():
                           / sum(h["grad_norm"] for h in hist[1:]),
                           **{f"exact_{k}": hist[-1][f"test_{k}"] for k in ("acc", "bacc", "auc", "loss")},
                           **{f"shots_{k}": v for k, v in s_shots.items()}))
-    out = ROOT / "results"
+    out = results_dir(2)
     pd.DataFrame(curves).to_csv(out / "shot_ext_curves.csv", index=False)
     df = pd.DataFrame(final)
     df.to_csv(out / "shot_ext_final.csv", index=False)

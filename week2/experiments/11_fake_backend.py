@@ -26,7 +26,7 @@ from qiskit import transpile
 from bp import SEED
 from bp.ansatz import depth_log, hea, init_uniform, observable
 from bp.config import FAKE_BACKEND, FAKE_DRAWS, FAKE_NS, HW_SHOTS, N_BOOT
-from bp.data import ROOT
+from bp.data import results_dir
 from bp.qiskit_backend import hea_circuit
 from bp.sim import zero_state
 
@@ -120,7 +120,7 @@ def main():
                                      draws=FAKE_DRAWS, var=g[:, j].var(ddof=1), var_lo=lo, var_hi=hi,
                                      shot_floor=floor[j], mean_cost=1 - f[:, j].mean()))
         print(f"n={n} L={L} layout={phys} ({time.time() - t0:.0f}s)", flush=True)
-    out = ROOT / "results"
+    out = results_dir(2)
     df = pd.DataFrame(rows)
     df.to_csv(out / "fake_backend.csv", index=False)
     (out / "fake_backend_layout.json").write_text(json.dumps(

@@ -24,7 +24,7 @@ from bp import SEED
 from bp.ansatz import depth_log, hea, init_uniform, layer_of_param, observable, structurally_zero_params
 from bp.config import (N_BOOT, NOISE_DEPTH_N, NOISE_DEPTHS, NOISE_DRAWS, NOISE_NS, NOISE_P2,
                        NOISE_STRENGTHS, VAR_K_FIXED)
-from bp.data import ROOT
+from bp.data import results_dir
 from bp.density import DensityCircuit, Noise, density_from_states
 from bp.sim import zero_state
 from bp.variance import bootstrap, variance_stats
@@ -94,7 +94,7 @@ def main():
     jobs.sort(key=lambda j: -(4 ** j[1]) * j[2])
     with ProcessPoolExecutor(max_workers=MAX_WORKERS) as ex:
         res = list(ex.map(job, jobs))
-    out = ROOT / "results"
+    out = results_dir(2)
     df = pd.DataFrame([r for rows, _ in res for r in rows])
     df.to_csv(out / "noise_variance.csv", index=False)
     pd.DataFrame([r for _, lay in res for r in lay]).to_csv(out / "noise_variance_layers.csv", index=False)

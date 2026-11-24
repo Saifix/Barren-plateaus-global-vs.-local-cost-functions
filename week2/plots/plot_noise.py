@@ -6,12 +6,12 @@ import pandas as pd
 from matplotlib.lines import Line2D
 
 from bp.config import HW_SHOTS, NOISE_DEPTH_N, NOISE_P2
-from bp.data import ROOT
+from bp.data import results_dir
 from bp.style import COLORS, IEEE_COL, IEEE_FULL, LABELS, NOISE_LABELS, NOISE_STYLE, save, use_style
 
 use_style()
-df = pd.read_csv(ROOT / "results" / "noise_variance.csv")
-lay = pd.read_csv(ROOT / "results" / "noise_variance_layers.csv")
+df = pd.read_csv(results_dir(2) / "noise_variance.csv")
+lay = pd.read_csv(results_dir(2) / "noise_variance_layers.csv")
 MODELS = ("noiseless", "depolarizing", "amplitude_damping")
 
 
@@ -71,10 +71,10 @@ handles = [Line2D([], [], color="k", ls=NOISE_STYLE[m]["ls"], marker=NOISE_STYLE
 handles += [Line2D([], [], color=COLORS[c], label=LABELS[c]) for c in ("global", "local")]
 fig.legend(handles=handles, loc="upper center", ncol=5, bbox_to_anchor=(0.5, 1.08))
 fig.tight_layout(w_pad=0.4)
-save(fig, "noise_variance")
+save(fig, "noise_variance", 2)
 
 # ------------------------------------------------------------ fake backend
-fb = pd.read_csv(ROOT / "results" / "fake_backend.csv")
+fb = pd.read_csv(results_dir(2) / "fake_backend.csv")
 fig, axes = plt.subplots(1, 2, figsize=(IEEE_FULL * 0.62, 2.2), sharey=True)
 for ax, k in zip(axes, ("first", "last")):
     for cost in ("global", "local"):
@@ -97,5 +97,5 @@ handles = [Line2D([], [], color="k", **{"ls": NOISE_STYLE["noiseless"]["ls"]}, m
            Line2D([], [], color="k", ls=(0, (1, 1)), label=f"shot-noise floor ({HW_SHOTS} shots)")]
 fig.legend(handles=handles, loc="upper center", ncol=3, bbox_to_anchor=(0.5, 1.09), fontsize=6.5)
 fig.tight_layout(w_pad=0.4)
-save(fig, "fake_backend")
+save(fig, "fake_backend", 2)
 print("saved figures/noise_variance, figures/fake_backend")

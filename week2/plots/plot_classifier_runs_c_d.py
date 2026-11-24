@@ -1,19 +1,19 @@
 """figures/shot_training_ext.{pdf,png}: H4 at n = 10 (Run C) and with fewer shots (Run D).
 
 Run D's 1024-shot and exact references are Run B's n = 8 runs (same folds,
-seeds and settings), read from results/shot_curves.csv.
+seeds and settings), read from week1/results/shot_curves.csv.
 """
 import matplotlib.pyplot as plt
 import pandas as pd
 from matplotlib.lines import Line2D
 
 from bp.config import RUN_C_NS, RUN_D_N, RUN_D_SHOTS, SHOTS_TRAIN
-from bp.data import ROOT
+from bp.data import results_dir
 from bp.style import COLORS, IEEE_FULL, LABELS, save, use_style
 
 use_style()
-ext = pd.read_csv(ROOT / "results" / "shot_ext_curves.csv")
-b = pd.read_csv(ROOT / "results" / "shot_curves.csv")
+ext = pd.read_csv(results_dir(2) / "shot_ext_curves.csv")
+b = pd.read_csv(results_dir(1) / "shot_curves.csv")             # Run B (Week 1)
 b = b[b.n == RUN_D_N].assign(shots_train=lambda d: d["mode"].map({"shots": SHOTS_TRAIN, "exact": 0}))
 allc = pd.concat([ext, b.assign(run="B")], ignore_index=True)
 
@@ -48,5 +48,5 @@ handles += [Line2D([], [], color="k", ls=dashes[s], lw=widths[s],
                    label=(f"{s} shots" if s else "exact gradients")) for s in budgets]
 fig.legend(handles=handles, loc="upper center", ncol=3, bbox_to_anchor=(0.5, 1.10), fontsize=6.5)
 fig.tight_layout(h_pad=0.5, w_pad=0.5)
-save(fig, "shot_training_ext")
+save(fig, "shot_training_ext", 2)
 print("saved figures/shot_training_ext")

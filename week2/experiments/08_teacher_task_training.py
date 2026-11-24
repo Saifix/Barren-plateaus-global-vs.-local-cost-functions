@@ -29,12 +29,12 @@ import pandas as pd
 from bp.ansatz import depth_log
 from bp.config import (TASK_ITERS, TASK_LR, TASK_NS, TASK_SEEDS, TASK_SHOT_NS, TASK_SHOTS,
                        TASK_TARGET)
-from bp.data import ROOT
+from bp.data import results_dir
 from bp.state_task import INITS, iters_to_target, train_state
 
 MAX_WORKERS = int(os.environ.get("BP_WORKERS", 14))
 LOG_EVERY = 5
-CACHE = ROOT / "results" / "cache" / "task"
+CACHE = results_dir(2) / "cache" / "task"
 
 
 def run(job):
@@ -71,7 +71,7 @@ def main():
             if n >= 10 and mode == "shots":
                 print(f"n={n} {cost} {init} seed={seed}: hit={hit} C_G_final={hist[-1]['C_G']:.3f} "
                       f"({dt:.0f}s, total {time.time() - t0:.0f}s)", flush=True)
-    out = ROOT / "results"
+    out = results_dir(2)
     pd.DataFrame(curves).to_csv(out / "task_curves.csv", index=False)
     df = pd.DataFrame(final)
     df.to_csv(out / "task_final.csv", index=False)

@@ -16,10 +16,10 @@ import pandas as pd
 from bp import SEED
 from bp.ansatz import depth_for
 from bp.config import N_BOOT, VAR_DEPTHS, VAR_K_FIXED, VAR_NS, var_draws
-from bp.data import ROOT
+from bp.data import results_dir
 from bp.variance import bootstrap, fit_decay, sample_gradients, variance_stats
 
-OUT = ROOT / "results"
+OUT = results_dir(1)
 OUT.mkdir(exist_ok=True)
 
 rows, boots = [], {}

@@ -8,13 +8,13 @@ locally, embedded in slides, or hosted on GitHub Pages.
 import csv
 import json
 
-from bp.data import ROOT
+from bp.data import results_dir, figures_dir
 from bp.style import COLORS
 
-data = json.loads((ROOT / "results" / "landscape.json").read_text())
+data = json.loads((results_dir(1) / "landscape.json").read_text())
 
 var = {}
-sweep = ROOT / "results" / "variance_sweep.csv"
+sweep = results_dir(1) / "variance_sweep.csv"
 if sweep.exists():
     for r in csv.DictReader(sweep.open()):
         if r["depth"] == "log":
@@ -221,7 +221,7 @@ draw(); hook("pg","pl"); hook("pl","pg");
 
 html = (TEMPLATE.replace("__DATA__", json.dumps(data, separators=(",", ":")))
         .replace("__GLOBAL__", COLORS["global"]).replace("__LOCAL__", COLORS["local"]))
-out = ROOT / "figures" / "landscape_3d.html"
+out = figures_dir(1) / "landscape_3d.html"
 out.parent.mkdir(exist_ok=True)
 out.write_text(html, encoding="utf-8")
 print(f"wrote {out} ({len(html) / 1e3:.0f} kB)")

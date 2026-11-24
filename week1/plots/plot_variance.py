@@ -5,7 +5,7 @@ import pandas as pd
 
 from bp import SEED
 from bp.ansatz import global_obs, local_obs, product_rx
-from bp.data import ROOT
+from bp.data import results_dir
 from bp.sim import zero_state
 from bp.style import COLORS, IEEE_COL, IEEE_FULL, LABELS, save, use_style
 from bp.variance import analytic_product_var
@@ -13,8 +13,8 @@ from bp.variance import analytic_product_var
 use_style()
 
 # ---------------------------------------------------------------- scaling
-df = pd.read_csv(ROOT / "results" / "variance_sweep.csv")
-fits = pd.read_csv(ROOT / "results" / "variance_decay_fits.csv")
+df = pd.read_csv(results_dir(1) / "variance_sweep.csv")
+fits = pd.read_csv(results_dir(1) / "variance_decay_fits.csv")
 titles = {"1": "$L = 1$", "log": r"$L = \lceil \log_2 n \rceil$", "n": "$L = n$"}
 fig, axes = plt.subplots(1, 3, figsize=(IEEE_FULL, 2.4), sharey=True)
 for ax, depth in zip(axes, ["1", "log", "n"]):
@@ -34,7 +34,7 @@ axes[0].set_ylabel(r"Var$[\partial C / \partial \theta_1]$")
 handles, labels = axes[0].get_legend_handles_labels()
 fig.legend(handles, labels, loc="upper center", ncol=2, bbox_to_anchor=(0.5, 1.07))
 fig.tight_layout(w_pad=0.6)
-save(fig, "variance_scaling")
+save(fig, "variance_scaling", 1)
 
 # ---------------------------------------------------------- analytic check
 rng = np.random.default_rng(SEED)
@@ -66,5 +66,5 @@ ax.set_xlabel("qubits $n$")
 ax.set_ylabel(r"Var$[\partial C / \partial \theta_1]$")
 ax.set_title("Product ansatz: simulator vs. closed form")
 ax.legend(loc="lower left")
-save(fig, "analytic_check")
+save(fig, "analytic_check", 1)
 print("saved figures/variance_scaling and figures/analytic_check")

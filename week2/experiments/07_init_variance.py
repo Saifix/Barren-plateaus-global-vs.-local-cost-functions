@@ -24,11 +24,11 @@ import pandas as pd
 from bp import SEED
 from bp.ansatz import depth_log, ib_hea, layer_of_param, make_init, observable, trivial_params
 from bp.config import INIT_KINDS, INIT_NS, N_BOOT, REDUCED_SCALES_ABLATION, VAR_K_FIXED, var_draws
-from bp.data import ROOT
+from bp.data import results_dir
 from bp.state_task import teacher_state
 from bp.variance import bootstrap, fit_decay, variance_stats
 
-OUT = ROOT / "results"
+OUT = results_dir(2)
 CHUNK = 50
 MAX_WORKERS = 14
 CELLS = [(k, 1.0) for k in INIT_KINDS] + [("reduced", s) for s in REDUCED_SCALES_ABLATION]

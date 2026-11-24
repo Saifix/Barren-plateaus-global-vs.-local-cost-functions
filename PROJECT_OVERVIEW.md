@@ -5,7 +5,7 @@ Status as of **22 Nov 2026** (end of Week 2; all simulations complete)
 
 This page explains the whole project in plain terms and collects every result so
 far. The technical write-up is the IEEE report (`report/report.tex`). Week-by-week
-number tables are in `results/week1_summary.md` and `results/week2_summary.md`.
+number tables are in `week1/results/week1_summary.md` and `week2/results/week2_summary.md`.
 
 ---
 
@@ -81,7 +81,7 @@ Negative results are reported as such.
 
 ### H1: global vs. local cost ✅ supported
 
-![Gradient variance vs. qubits](figures/variance_scaling.png)
+![Gradient variance vs. qubits](week1/figures/variance_scaling.png)
 
 * At 14 qubits and L = ⌈log₂ n⌉, the global-cost gradient variance is
   **4.0 × 10⁻⁸**, while the local cost's is **2.7 × 10⁻⁴**, about **6800× larger**.
@@ -103,7 +103,7 @@ Negative results are reported as such.
 
 ### H3: smarter starting points ❌ not supported (neither criterion met)
 
-![Initialization comparison](figures/init_variance.png)
+![Initialization comparison](week2/figures/init_variance.png)
 
 Task: the circuit must learn to undo a random "teacher" circuit, mapping a
 scrambled state back to all-zeros. The task is always solvable, and starting
@@ -123,10 +123,10 @@ from "do nothing" (the identity) is not already the answer.
 * The local cost gains a steady ~2× from identity blocks, but it was never in
   trouble.
 * **Ablation:** narrowing the small-angle range to π/(4√L) only raises the gain to
-  ~1.9× (`figures/init_reduced_width.png`).
+  ~1.9× (`week2/figures/init_reduced_width.png`).
 **Do they train faster? No.**
 
-![Teacher-task training](figures/task_training.png)
+![Teacher-task training](week2/figures/task_training.png)
 
 We trained every combination: 10 seeds, 4–12 qubits, global or local cost,
 1024-shot or exact gradients, 300 Adam steps. Success means reaching C_G ≤ 0.1
@@ -157,7 +157,7 @@ We trained every combination: 10 seeds, 4–12 qubits, global or local cost,
 
 ### H4: does the classifier care? ⚠️ there is a gap, but it isn't a plateau effect
 
-![Shot-noise training](figures/shot_training.png)
+![Shot-noise training](week1/figures/shot_training.png)
 
 * With exact gradients, both readouts reach a similar test ROC-AUC (global
   0.976 → 0.948, local 0.978 → 0.962 for 4 → 10 qubits). All quantum models stay
@@ -168,7 +168,7 @@ We trained every combination: 10 seeds, 4–12 qubits, global or local cost,
   exact-trained models end up identical. **No plateau effect at this size.**
 **Week 2: 10 qubits (Run C), and 8 qubits with only 32 or 128 shots (Run D)**
 
-![Runs C and D](figures/shot_training_ext.png)
+![Runs C and D](week2/figures/shot_training_ext.png)
 
 | | global readout | local readout | gap (local − global) |
 |---|---|---|---|
@@ -197,7 +197,7 @@ differences with a 95% bootstrap interval.)
 
 ### Noise: cost choice matters more than noise (at our sizes)
 
-![Noise study](figures/noise_variance.png)
+![Noise study](week2/figures/noise_variance.png)
 
 * **(a)** At shallow depth, realistic noise (1% per two-qubit gate) lowers the
   gradient variance by **at most 20%**. The global/local gap is orders of
@@ -216,7 +216,7 @@ differences with a 95% bootstrap interval.)
 
 ### IBM device noise model: the Week 3 hardware test should work
 
-![FakeFez noise model](figures/fake_backend.png)
+![FakeFez noise model](week2/figures/fake_backend.png)
 
 * With IBM's calibrated `FakeFez` noise (gate errors, decoherence, readout errors),
   the gradient variances stay within **15%** of the noiseless values up to 8 qubits.
@@ -278,16 +278,17 @@ which is the right job for it.
 ## 7. Where everything lives
 
 ```
-src/bp/          simulator, noisy simulator, circuits & costs, classifier, H3 task
-experiments/     00–06 Week 1 · 07 initialization variance · 08 H3 training
-                 09 H4 Runs C/D · 10 noise study · 11 IBM FakeFez noise model
-viz/             figure scripts + week2_summary.py
-results/         CSV outputs and summaries
-figures/         all plots (PDF + PNG) and the interactive 3D landscape explorer
-tests/           51 automated tests
-report/          IEEE report (LaTeX)
+week1/           Week 1: experiments/ (00–06), plots/, results/, figures/ (incl. 3D explorer)
+week2/           Week 2: experiments/ (07 initialization variance · 08 teacher-task training
+                 · 09 classifier Runs C/D · 10 noise study · 11 IBM FakeFez), plots/, results/, figures/
+src/bp/          shared library: simulator, noisy simulator, circuits & costs, classifier, H3 task
+tests/           51 automated checks that the library is correct (they produce no results)
+report/          IEEE report (LaTeX) and the submitted weekly PDFs
+presentations/   progress-update slides
 synopsis/        the original pre-registered plan
 ```
+
+*Experiments* produce results; *tests* only check that the code is right.
 
 Reproduce everything with `python run_all.py` (or `--skip-slow` to rebuild the
 figures from saved results).

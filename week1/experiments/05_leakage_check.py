@@ -12,7 +12,7 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score, roc_auc_score
 
 from bp import SEED
-from bp.data import ROOT, load_data, load_folds, make_preprocessor
+from bp.data import load_data, load_folds, make_preprocessor, results_dir
 
 PERMS_PER_FOLD = 40
 X, y = load_data()
@@ -26,6 +26,6 @@ for f, (tr, te) in enumerate(load_folds()):
                          acc=accuracy_score(y[te], m.predict(tf(X[te]))),
                          auc=roc_auc_score(y[te], m.predict_proba(tf(X[te]))[:, 1])))
 df = pd.DataFrame(rows)
-df.to_csv(ROOT / "results" / "leakage_check_logreg.csv", index=False)
+df.to_csv(results_dir(1) / "leakage_check_logreg.csv", index=False)
 se = df.auc.std() / np.sqrt(len(df))
 print(f"{len(df)} permutations: acc {df.acc.mean():.3f}, AUC {df.auc.mean():.3f} ± {se:.3f} (s.e.)")

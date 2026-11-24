@@ -24,6 +24,20 @@ ROOT = Path(__file__).resolve().parents[2]
 FOLDS_PATH = ROOT / "data" / "folds.json"
 
 
+def results_dir(week: int) -> Path:
+    """week<k>/results/: the CSV and summary outputs of that week's experiments."""
+    d = ROOT / f"week{week}" / "results"
+    d.mkdir(parents=True, exist_ok=True)
+    return d
+
+
+def figures_dir(week: int) -> Path:
+    """week<k>/figures/: the PDF/PNG figures made from that week's results."""
+    d = ROOT / f"week{week}" / "figures"
+    d.mkdir(parents=True, exist_ok=True)
+    return d
+
+
 def load_data():
     """Breast Cancer Wisconsin (Diagnostic). y = +1 malignant, -1 benign.
 

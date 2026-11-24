@@ -8,7 +8,7 @@ import pandas as pd
 from bp.ansatz import depth_log
 from bp.classical import matched_hidden, mlp_params, mlp_with_curves, run_baseline
 from bp.config import CLF_NS, EPOCHS, BATCH, INIT_SEEDS, LR_MLP
-from bp.data import ROOT, load_data, load_folds, make_preprocessor
+from bp.data import load_data, load_folds, make_preprocessor, results_dir
 
 X, y = load_data()
 folds = load_folds()
@@ -34,6 +34,6 @@ for n in CLF_NS:
     print(f"n={n}: MLP hidden={h} ({mlp_params(n, h)} params vs quantum {2 * n * L})", flush=True)
 
 df = pd.DataFrame(rows)
-df.to_csv(ROOT / "results" / "baselines.csv", index=False)
-pd.DataFrame(curves).to_csv(ROOT / "results" / "mlp_curves.csv", index=False)
+df.to_csv(results_dir(1) / "baselines.csv", index=False)
+pd.DataFrame(curves).to_csv(results_dir(1) / "mlp_curves.csv", index=False)
 print(df.groupby(["n", "model"])[["acc", "bacc", "auc"]].agg(["mean", "std"]).round(3))

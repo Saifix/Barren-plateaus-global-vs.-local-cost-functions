@@ -18,7 +18,7 @@ import pandas as pd
 from bp import SEED
 from bp.ansatz import depth_log
 from bp.config import BATCH, INIT_SEEDS, LR_QUANTUM, SHOT_EPOCHS, SHOT_NS, SHOTS, SHOTS_TRAIN
-from bp.data import ROOT, load_data, load_folds, make_preprocessor
+from bp.data import load_data, load_folds, make_preprocessor, results_dir
 from bp.metrics import scores
 from bp.qclassifier import QuantumClassifier
 
@@ -62,7 +62,7 @@ def main():
                           init_exact_grad_norm=hist[0]["exact_grad_norm"],
                           **{f"exact_{k}": hist[-1][f"test_{k}"] for k in ("acc", "bacc", "auc", "loss")},
                           **{f"shots_{k}": v for k, v in s_shots.items()}))
-    out = ROOT / "results"
+    out = results_dir(1)
     pd.DataFrame(curves).to_csv(out / "shot_curves.csv", index=False)
     df = pd.DataFrame(final)
     df.to_csv(out / "shot_final.csv", index=False)

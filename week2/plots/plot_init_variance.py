@@ -4,13 +4,13 @@ import numpy as np
 import pandas as pd
 from matplotlib.lines import Line2D
 
-from bp.data import ROOT
+from bp.data import results_dir
 from bp.style import COLORS, IEEE_FULL, INIT_LABELS, INIT_STYLE, LABELS, save, use_style
 
 use_style()
-df = pd.read_csv(ROOT / "results" / "init_variance.csv")
-fits = pd.read_csv(ROOT / "results" / "init_variance_fits.csv")
-ratios = pd.read_csv(ROOT / "results" / "init_variance_ratios.csv")
+df = pd.read_csv(results_dir(2) / "init_variance.csv")
+fits = pd.read_csv(results_dir(2) / "init_variance_fits.csv")
+ratios = pd.read_csv(results_dir(2) / "init_variance_ratios.csv")
 
 fig, axes = plt.subplots(1, 3, figsize=(IEEE_FULL, 2.4))
 for ax, cost in zip(axes[:2], ("global", "local")):
@@ -57,7 +57,7 @@ handles = [Line2D([], [], color="k", ls=INIT_STYLE[i]["ls"], marker=INIT_STYLE[i
 handles += [Line2D([], [], color=COLORS[c], label=LABELS[c]) for c in ("global", "local")]
 fig.legend(handles=handles, loc="upper center", ncol=5, bbox_to_anchor=(0.5, 1.08))
 fig.tight_layout(w_pad=0.8)
-save(fig, "init_variance")
+save(fig, "init_variance", 2)
 
 # Ablation: reduced-domain width, global and local, ratio to uniform
 fig, ax = plt.subplots(figsize=(3.5, 2.2))
@@ -74,5 +74,5 @@ ax.set_xlabel("qubits $n$")
 ax.set_ylabel("Var[reduced] / Var[uniform]")
 ax.set_title("Ablation: reduced-domain width")
 ax.legend(ncol=2, fontsize=6)
-save(fig, "init_reduced_width")
+save(fig, "init_reduced_width", 2)
 print("saved figures/init_variance, figures/init_reduced_width")

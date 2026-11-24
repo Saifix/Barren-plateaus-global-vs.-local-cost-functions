@@ -15,7 +15,7 @@ import numpy as np
 
 from bp import SEED
 from bp.ansatz import depth_log, hea, observable
-from bp.data import ROOT
+from bp.data import results_dir
 from bp.sim import zero_state
 
 NS = [2, 4, 6, 8, 10, 12]
@@ -57,5 +57,4 @@ for n in NS:
     print(f"n={n:>2} L={L} P={P:>3}  solution slice: mean C_G={np.mean(s['global']):.3f} "
           f"mean C_L={np.mean(s['local']):.3f}", flush=True)
 
-(ROOT / "results").mkdir(exist_ok=True)
-(ROOT / "results" / "landscape.json").write_text(json.dumps(data))
+(results_dir(1) / "landscape.json").write_text(json.dumps(data))

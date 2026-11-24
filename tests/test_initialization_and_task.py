@@ -85,7 +85,7 @@ def test_train_state_is_paired_across_cells():
 
 
 def test_readout_matrices_apply_per_qubit():
-    spec = importlib.util.spec_from_file_location("e11", ROOT / "experiments" / "11_fake_backend.py")
+    spec = importlib.util.spec_from_file_location("e11", ROOT / "week2" / "experiments" / "11_fake_backend.py")
     m = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(m)
     A0 = np.array([[0.9, 0.2], [0.1, 0.8]])
