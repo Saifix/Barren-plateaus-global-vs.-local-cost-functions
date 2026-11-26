@@ -62,3 +62,16 @@ FAKE_BACKEND = "FakeFez"
 FAKE_NS = [2, 4, 6, 8]
 FAKE_DRAWS = 200
 HW_SHOTS = 4096                         # used for the shot-noise floor (Week 3 setting)
+
+# ---------------------------------------------------------------- Week 3
+# Q1: the shot budget as a hyperparameter
+SHOT_GRID = [256, 1024, 5000, 10000]    # shots per circuit (parameter-shift estimate)
+SHOT_VAR_L = "log"                      # depth for the shot-budget variance study
+SHOT_TASK_NS = [6, 8, 10]               # teacher task, uniform init, all of SHOT_GRID
+SHOT_TASK_N12_SHOTS = [1024, 10000]     # n = 12: tests the predicted stall at 1024 shots
+SHOT_TASK_N12_SEEDS = 5                 # first 5 of TASK_SEEDS (one run ~2.5 h)
+
+# Q2: analytical (Pauli-path) noise model vs. simulation
+MODEL_NS = [4, 6, 8, 10]                # regime map; theta_1 only for n >= 9
+MODEL_DEPTHS = [1, 2, 3, 4, 6, 8, 10, 12, 16, 20]
+MODEL_P2 = [0.001, 0.003, 0.01, 0.03]

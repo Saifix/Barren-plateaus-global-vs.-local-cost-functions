@@ -11,10 +11,11 @@ import time
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
-W1, W2 = "week1/experiments/", "week2/experiments/"
-P1, P2 = "week1/plots/", "week2/plots/"
+W1, W2, W3 = "week1/experiments/", "week2/experiments/", "week3/experiments/"
+P1, P2, P3 = "week1/plots/", "week2/plots/", "week3/plots/"
 SLOW = {W1 + "01_variance_sweep.py", W1 + "03_quantum_classifier.py", W1 + "06_classifier_shot_training.py",
-        W2 + "07_init_variance.py", W2 + "08_teacher_task_training.py", W2 + "09_classifier_runs_c_d.py"}
+        W2 + "07_init_variance.py", W2 + "08_teacher_task_training.py", W2 + "09_classifier_runs_c_d.py",
+        W3 + "13_shot_budget_training.py"}
 STEPS = [
     # Week 1: pipeline, baselines, first quantum model, variance sweep
     W1 + "00_make_folds.py",
@@ -39,6 +40,13 @@ STEPS = [
     P2 + "plot_classifier_runs_c_d.py",
     P2 + "plot_noise.py",
     P2 + "make_summary.py",
+    # Week 3: Q1 shot budget as a hyperparameter, Q2 analytical noise model
+    W3 + "12_shot_budget.py",
+    W3 + "13_shot_budget_training.py",
+    W3 + "14_noise_model.py",
+    P3 + "plot_shot_budget.py",
+    P3 + "plot_noise_model.py",
+    P3 + "make_summary.py",
 ]
 
 skip_slow = "--skip-slow" in sys.argv

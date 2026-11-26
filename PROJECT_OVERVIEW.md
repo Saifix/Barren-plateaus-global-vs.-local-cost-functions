@@ -1,11 +1,12 @@
 # Project overview: Barren Plateaus, Global vs. Local Cost Functions
 
 AI 631 Quantum Machine Learning, Fall 2026, Project #8 (QNN track) · Saif ur Rehman
-Status as of **22 Nov 2026** (end of Week 2; all simulations complete)
+Status as of **26 Nov 2026** (Week 3: shot-budget study and analytical noise model complete; hardware run next)
 
 This page explains the whole project in plain terms and collects every result so
 far. The technical write-up is the IEEE report (`report/report.tex`). Week-by-week
-number tables are in `week1/results/week1_summary.md` and `week2/results/week2_summary.md`.
+number tables are in `week1/results/week1_summary.md`, `week2/results/week2_summary.md`
+and `week3/results/week3_summary.md`.
 
 ---
 
@@ -226,6 +227,48 @@ differences with a 95% bootstrap interval.)
   gap. The limit will be the number of random draws we can afford, not the shot
   noise.
 
+### Week 3, Q1: how many shots does each cost need?
+
+After the Week 2 review, the supervisor asked us to treat the number of shots as a
+hyperparameter (try 1024, 5000, …), because the answer depends on the number of qubits.
+
+![Shot budget](week3/figures/shot_budget.png)
+
+* **(a)** For each cost we computed how many shots per circuit are needed before
+  the gradient signal is bigger than the measurement noise (signal-to-noise = 1).
+  The **local** cost needs only **11–29 shots** all the way to 14 qubits. The
+  **global** cost needs **about 3.5× more for every 2 extra qubits**: 790 at 12
+  qubits and 3,740 at 14. The usual worst-case estimate (dotted) is 5–4,600× too
+  pessimistic, because measuring a tiny probability also has tiny noise.
+* **(b, c)** We then trained the teacher task at 256, 1024, 5000 and 10,000 shots
+  (6–12 qubits). Up to 12 qubits **1024 shots are enough for both costs** (at least
+  60% of seeds reach the target everywhere). More shots mostly make training
+  faster: at 12 qubits the global cost needs a median of 271 steps with 1024 shots
+  and 105 with 10,000. This matches (a): 1024 shots only run out for the global
+  cost between 12 and 14 qubits. (The 12-qubit point has 5 seeds per setting.)
+
+### Week 3, Q2: do depth and noise erase the local advantage?
+
+The supervisor suggested modelling a random circuit analytically, in addition to
+simulating it. We built an exact model (`src/bp/pauli_path.py`): it tracks how the
+measured operator spreads over Pauli strings, averaged over random angles, and how
+each noisy gate shrinks it. No sampling is needed, so it reaches sizes and depths
+the noisy simulator cannot.
+
+![Analytical noise model](week3/figures/noise_model.png)
+
+* **(a, b)** The model matches every Week 1 and Week 2 simulation. For depolarizing
+  noise it predicts the fraction of variance that survives to within **0.4%**
+  (median).
+* **(c)** Noise **widens** the gap between the costs instead of erasing it: at 10
+  qubits, 20 layers and 1% noise the gap is 4.5× bigger than without noise.
+* **(d)** The reason: noise damps every qubit the operator touches. The local
+  cost's operator stays inside its light cone, so it meets the same few noisy
+  gates at any n; the global one spreads over about 0.6 n qubits per layer.
+* **Exception:** amplitude damping pulls qubits towards 0, the global cost's
+  target. The model's noise-averaged part misses that pull, and in simulation it
+  partly helps the global cost.
+
 ### Scorecard
 
 | | Verdict so far |
@@ -244,7 +287,7 @@ differences with a 95% bootstrap interval.)
 | Nov 8 | Synopsis | ✅ |
 | Nov 15 | Week 1: tools, data pipeline, baselines, first quantum model | ✅ (branch `week1`) |
 | **Nov 22** | **Week 2: full simulations, initializations, training task, noise, ablations, results draft** | ✅ (branch `week2`) |
-| Nov 29 | Week 3: IBM quantum hardware, 2/4/6 qubits, ~300 circuits | Next. Needs an IBM Quantum API key (free plan: 10 min/month is enough) |
+| Nov 29 | Week 3: shot budget (Q1), analytical noise model (Q2), IBM quantum hardware at 2/4/6 qubits | Q1 and Q2 ✅ (branch `main`); hardware run next. Needs an IBM Quantum API key |
 | Dec 6 | Final report, presentation, tagged release | — |
 
 **Where things run:** all simulations run on the laptop (they need millions of
@@ -266,12 +309,10 @@ which is the right job for it.
 
 ## 6. What's left
 
-1. Compile the report PDF (Overleaf or a local TeX install).
-2. Week 3: create an IBM Quantum API key, then write and run the hardware script
+1. Week 3: create an IBM Quantum API key, then write and run the hardware script
    (gradient variance at 2, 4, 6 qubits on a real IBM device).
-3. Optional, if time allows: test the extrapolation that the global cost stalls at
-   about 12+ qubits with 1024-shot gradients. This takes ~2.5 h per run on the
-   laptop.
+2. Add the Week 3 results (Q1, Q2) to the report.
+3. Final report, presentation and tagged release (Dec 6).
 
 ---
 
@@ -281,8 +322,10 @@ which is the right job for it.
 week1/           Week 1: experiments/ (00–06), plots/, results/, figures/ (incl. 3D explorer)
 week2/           Week 2: experiments/ (07 initialization variance · 08 teacher-task training
                  · 09 classifier Runs C/D · 10 noise study · 11 IBM FakeFez), plots/, results/, figures/
-src/bp/          shared library: simulator, noisy simulator, circuits & costs, classifier, H3 task
-tests/           51 automated checks that the library is correct (they produce no results)
+week3/           Week 3: experiments/ (12 shot budget · 13 training at each shot budget
+                 · 14 analytical noise model), plots/, results/, figures/
+src/bp/          shared library: simulator, noisy simulator, analytical Pauli-path model, circuits & costs, classifier, H3 task
+tests/           57 automated checks that the library is correct (they produce no results)
 report/          IEEE report (LaTeX) and the submitted weekly PDFs
 presentations/   progress-update slides
 synopsis/        the original pre-registered plan

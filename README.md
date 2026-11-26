@@ -99,6 +99,42 @@ In brief:
 
 ![Initial gradient variance by initialization](week2/figures/init_variance.png)
 
+## Week 3 status (in progress): two focused questions
+
+After the Week 2 review the project is narrowed to two questions:
+**Q1** how many shots does each cost need to train (shots as a hyperparameter), and
+**Q2** do depth and hardware noise erase the local cost's advantage (analytical
+modelling of random circuits plus simulation).
+
+| Deliverable | Where |
+|---|---|
+| Exact Pauli-path model of the gradient variance of random-angle circuits, with gate noise | `src/bp/pauli_path.py`, `tests/test_pauli_path.py` |
+| Q1: shots per circuit needed for a measurable gradient, n = 2…14 | `week3/experiments/12_shot_budget.py` |
+| Q1: teacher-task training at 256 / 1024 / 5000 / 10000 shots, n = 6…12 | `week3/experiments/13_shot_budget_training.py` |
+| Q2: model vs. every Week 1/2 simulation, regime map to n = 10, L = 20 | `week3/experiments/14_noise_model.py` |
+| Progress-update slides | `presentations/` |
+
+Headline numbers: [`week3/results/week3_summary.md`](week3/results/week3_summary.md).
+
+* **Q1.** The local cost needs 11–29 shots per circuit for a gradient signal above
+  the shot noise, up to 14 qubits (×1.5 per 2 qubits). The global cost needs ×3.5
+  more per 2 qubits: 790 at n = 12 and 3,740 at n = 14. That is 5–4,600× fewer than
+  the worst-case estimate, because the shot noise of a small probability P(0ⁿ) is
+  itself small. 1024 shots stop being enough for the global cost between 12 and 14 qubits.
+  Training confirms it: up to 12 qubits, 1024 shots train both costs (≥ 60% of seeds
+  reach the target at every n); 10,000 shots mainly cut the steps (global, n = 12:
+  271 → 105 median steps) and do not change which cost wins.
+* **Q2.** The model reproduces the simulated noise retention to 0.4% (median) for
+  depolarizing noise. Unital noise **widens** the local advantage: the local cost's
+  operator stays inside its light cone, so it meets the same number of noisy gates
+  at any n, while the global one spreads over ≈ 0.6 n qubits per layer. At n = 10,
+  L = 20 and 1% noise the gap grows 4.5×. Amplitude damping is the exception: its
+  pull towards |0…0⟩ (the global target) partly favours the global cost.
+
+![Q1: shot budget](week3/figures/shot_budget.png)
+
+![Q2: analytical noise model](week3/figures/noise_model.png)
+
 ## Repository layout
 
 ```
@@ -114,6 +150,8 @@ week2/             Week 2 (Nov 22): initializations, teacher task, Runs C/D, noi
   plots/             figure scripts + make_summary.py
   results/           CSV outputs + week2_summary.md (results/cache/: run checkpoints, not committed)
   figures/           PDF/PNG figures
+week3/             Week 3: Q1 shot budget (12, 13) and Q2 analytical noise model (14)
+  experiments/  plots/  results/  figures/
 src/bp/            shared library used by every week: simulators, circuits & costs, data,
                    baselines, classifier, H3 task, Qiskit circuits, plot style, paths
 tests/             automated checks that the library is correct (pytest): Qiskit/Aer cross-checks,
